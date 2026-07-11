@@ -1,0 +1,50 @@
+# =============================================================================
+# Frigate GitOps — Instance Inventory (SINGLE SOURCE OF TRUTH)
+# =============================================================================
+# Adding a new instance requires ONLY:
+#   1. Appending a new entry to the `instances:` list below.
+#   2. Creating a matching camera file under inventory/cameras/<name>.yml.
+# Everything else (Frigate config + docker-compose services) is rendered
+# automatically by scripts/render.py.
+#
+# NEVER put IP addresses, usernames, passwords or any secret in this file.
+# =============================================================================
+
+# Global settings shared by every instance.
+global:
+  # Pinned Frigate image — do not float this tag.
+  frigate_image: ghcr.io/blakeblackshear/frigate:0.17.2
+
+  # Runtime layout on the Ubuntu server.
+  base_path: /srv/frigate
+  secrets_env: /srv/frigate/secrets/.env
+
+  # Container runtime knobs.
+  restart_policy: unless-stopped
+  shm_size: 128mb
+
+  # JSON Docker logging with rotation.
+  log_max_size: "10m"
+  log_max_file: "3"
+
+  # Internal container ports for Frigate 0.17.x (do not change).
+  internal_ui_port: 8971      # authenticated web UI (nginx)
+  internal_rtsp_port: 8554    # go2rtc RTSP restream
+  internal_webrtc_port: 8555  # go2rtc WebRTC (tcp + udp)
+
+# Instances. Host ports MUST be unique across the whole server.
+instances:
+  - name: cafe
+    ui_port: 8972
+    rtsp_port: 8556
+    webrtc_port: 8557
+
+  - name: center11
+    ui_port: 8973
+    rtsp_port: 8558
+    webrtc_port: 8559
+
+  - name: center22
+    ui_port: 8974
+    rtsp_port: 8560
+    webrtc_port: 8561

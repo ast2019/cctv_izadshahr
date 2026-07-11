@@ -1,0 +1,60 @@
+# =============================================================================
+# Frigate configuration — GENERATED, DO NOT EDIT BY HAND
+# Instance: {{ instance.name }}
+# Rendered from inventory/ by scripts/render.py
+# =============================================================================
+
+# Unique MQTT identity per instance. Disabled by default (no broker required),
+# but topic_prefix and client_id are kept unique so enabling MQTT later never
+# causes cross-instance topic/id collisions.
+mqtt:
+  enabled: false
+  topic_prefix: frigate_{{ instance.name }}
+  client_id: frigate_{{ instance.name }}
+
+# Detection is intentionally disabled for this deployment (no detectors,
+# no GPU / NVIDIA / Coral / hardware accelerators are configured).
+detect:
+  enabled: false
+
+# Recording disabled by default.
+record:
+  enabled: false
+
+# Snapshots disabled by default.
+snapshots:
+  enabled: false
+
+# Birdseye disabled by default.
+birdseye:
+  enabled: false
+
+# -----------------------------------------------------------------------------
+# go2rtc restreams — the ONLY place real camera URLs are assembled.
+# Host / user / password are injected at runtime via Frigate env substitution
+# ({FRIGATE_*} placeholders resolved from /srv/frigate/secrets/.env).
+# -----------------------------------------------------------------------------
+go2rtc:
+  streams:
+{% for cam in cameras %}
+    {{ cam.name }}:
+      - {{ cam.stream_url }}
+{% endfor %}
+
+# -----------------------------------------------------------------------------
+# Cameras consume the local go2rtc restream (never the camera directly), so
+# credentials appear exactly once, in the go2rtc block above.
+# -----------------------------------------------------------------------------
+cameras:
+{% for cam in cameras %}
+  {{ cam.name }}:
+    enabled: {{ 'true' if cam.enabled else 'false' }}
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:{{ g.internal_rtsp_port }}/{{ cam.name }}
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: false
+{% endfor %}

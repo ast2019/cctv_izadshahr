@@ -1,0 +1,27 @@
+# =============================================================================
+# Camera inventory for instance: center22
+# =============================================================================
+# PLACEHOLDER — replace the sources/cameras below with the real center22
+# camera list. Never put IP addresses, usernames or passwords here.
+#
+# Each source maps to runtime-only variables in /srv/frigate/secrets/.env:
+#   FRIGATE_CENTER22_<SOURCE>_USER
+#   FRIGATE_CENTER22_<SOURCE>_PASSWORD
+#   FRIGATE_CENTER22_<SOURCE>_HOST
+# =============================================================================
+
+sources:
+  dvr:
+    scheme: rtsp
+    rtsp_port: 554
+
+cameras:
+  dvr_center22_ch1:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=1&subtype=0"
+
+  dvr_center22_ch2:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=2&subtype=0"

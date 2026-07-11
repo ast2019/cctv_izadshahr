@@ -1,0 +1,103 @@
+# =============================================================================
+# Camera inventory for instance: cafe
+# =============================================================================
+# IMPORTANT: never put IP addresses, usernames or passwords in this file.
+#
+# A "source" is a credential + host group. Every source maps to three runtime
+# variables that live ONLY in /srv/frigate/secrets/.env and are substituted by
+# Frigate at container start:
+#
+#   FRIGATE_CAFE_<SOURCE>_USER
+#   FRIGATE_CAFE_<SOURCE>_PASSWORD
+#   FRIGATE_CAFE_<SOURCE>_HOST
+#
+# Cameras reference a source by name and add only the non-secret url path.
+# The DVR feeds many channels from a single host, so all its channels share one
+# source.
+# =============================================================================
+
+sources:
+  dvr:            # DVR feeding multiple analog channels
+    scheme: rtsp
+    rtsp_port: 554
+  parking3_90:    # IP camera
+    scheme: rtsp
+    rtsp_port: 554
+  parking3_89:    # IP camera
+    scheme: rtsp
+    rtsp_port: 554
+  ashpazkhane_99: # kitchen IP camera
+    scheme: rtsp
+    rtsp_port: 554
+  rest_100:       # restaurant IP camera
+    scheme: rtsp
+    rtsp_port: 554
+  rest_101:       # restaurant IP camera
+    scheme: rtsp
+    rtsp_port: 554
+
+cameras:
+  dvr_cafe_ch1:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=1&subtype=0"
+
+  dvr_cafe_ch2:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=2&subtype=0"
+
+  dvr_cafe_ch4:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=4&subtype=0"
+
+  dvr_cafe_ch5:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=5&subtype=0"
+
+  dvr_cafe_ch6:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=6&subtype=0"
+
+  dvr_cafe_ch7:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=7&subtype=0"
+
+  dvr_cafe_ch8:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=8&subtype=0"
+
+  dvr_cafe_ch10:
+    enabled: true
+    source: dvr
+    path: "/cam/realmonitor?channel=10&subtype=0"
+
+  ipcam_parking3_90:
+    enabled: true
+    source: parking3_90
+    path: "/Streaming/Channels/101"
+
+  ipcam_parking3_89:
+    enabled: true
+    source: parking3_89
+    path: "/Streaming/Channels/101"
+
+  ipcam_ashpazkhane_99:
+    enabled: true
+    source: ashpazkhane_99
+    path: "/Streaming/Channels/101"
+
+  ipcam_rest_100:
+    enabled: true
+    source: rest_100
+    path: "/Streaming/Channels/101"
+
+  ipcam_rest_101:
+    enabled: true
+    source: rest_101
+    path: "/Streaming/Channels/101"
