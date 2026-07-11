@@ -1,0 +1,62 @@
+name: deploy
+
+# Production deployment over SSH. Runs only after code lands on main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two production deployments at once.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gate: render + validate before we are allowed anywhere near the server.
+  # ---------------------------------------------------------------------------
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --disable-pip-version-check jinja2 pyyaml
+      - run: python3 scripts/render.py
+      - run: docker compose -f generated/compose.generated.yaml config -q
+
+  # ---------------------------------------------------------------------------
+  # Deploy: SSH to the server, pull main, run the server-side deploy script,
+  # which backs up, renders, and rolls instances out sequentially with health
+  # checks.
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" \
+              -o StrictHostKeyChecking=yes \
+              "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          cd /srv/frigate/repo
+          git fetch --prune origin main
+          git reset --hard origin/main
+          bash scripts/deploy.sh
+          REMOTE
