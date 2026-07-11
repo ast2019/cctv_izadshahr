@@ -4,7 +4,7 @@
 # PLACEHOLDER — replace the sources/cameras below with the real center11
 # camera list. Never put IP addresses, usernames or passwords here.
 #
-# Each source maps to runtime-only variables in /srv/frigate/secrets/.env:
+# Each source maps to runtime-only variables in /home/rootuser/frigate_new/secrets/.env:
 #   FRIGATE_CENTER11_<SOURCE>_USER
 #   FRIGATE_CENTER11_<SOURCE>_PASSWORD
 #   FRIGATE_CENTER11_<SOURCE>_HOST

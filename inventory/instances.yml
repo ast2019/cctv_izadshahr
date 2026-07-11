@@ -16,8 +16,8 @@ global:
   frigate_image: ghcr.io/blakeblackshear/frigate:0.17.2
 
   # Runtime layout on the Ubuntu server.
-  base_path: /srv/frigate
-  secrets_env: /srv/frigate/secrets/.env
+  base_path: /home/rootuser/frigate_new
+  secrets_env: /home/rootuser/frigate_new/secrets/.env
 
   # Container runtime knobs.
   restart_policy: unless-stopped

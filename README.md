@@ -59,11 +59,11 @@ docs/                      # مستندات تفصیلی (انگلیسی)
 <div dir="ltr">
 
 ```
-/srv/frigate/repo                     # همین مخزن گیت
-/srv/frigate/secrets/.env             # رمزها (هرگز در گیت نیست)
-/srv/frigate/media/<instance>         # مدیای هر نمونه (هرگز در گیت نیست)
-/srv/frigate/runtime-config/<instance># config.yml + frigate.db هر نمونه
-/srv/frigate/backups                  # بکاپ‌های زمان‌دار
+/home/rootuser/frigate_new/repo                     # همین مخزن گیت
+/home/rootuser/frigate_new/secrets/.env             # رمزها (هرگز در گیت نیست)
+/home/rootuser/frigate_new/media/<instance>         # مدیای هر نمونه (هرگز در گیت نیست)
+/home/rootuser/frigate_new/runtime-config/<instance># config.yml + frigate.db هر نمونه
+/home/rootuser/frigate_new/backups                  # بکاپ‌های زمان‌دار
 ```
 
 </div>
@@ -90,8 +90,8 @@ bash scripts/validate.sh
 <div dir="ltr">
 
 ```bash
-sudo mkdir -p /srv/frigate/{secrets,media,runtime-config,backups}
-sudo git clone https://github.com/ast2019/cctv_izadshahr.git /srv/frigate/repo
+sudo mkdir -p /home/rootuser/frigate_new/{secrets,media,runtime-config,backups}
+sudo git clone https://github.com/ast2019/cctv_izadshahr.git /home/rootuser/frigate_new/repo
 ```
 
 </div>
@@ -104,9 +104,9 @@ sudo git clone https://github.com/ast2019/cctv_izadshahr.git /srv/frigate/repo
 <div dir="ltr">
 
 ```bash
-sudo cp /srv/frigate/repo/.env.example /srv/frigate/secrets/.env
-sudo chmod 600 /srv/frigate/secrets/.env
-sudo nano /srv/frigate/secrets/.env
+sudo cp /home/rootuser/frigate_new/repo/.env.example /home/rootuser/frigate_new/secrets/.env
+sudo chmod 600 /home/rootuser/frigate_new/secrets/.env
+sudo nano /home/rootuser/frigate_new/secrets/.env
 ```
 
 </div>
@@ -116,7 +116,7 @@ sudo nano /srv/frigate/secrets/.env
 <div dir="ltr">
 
 ```bash
-cd /srv/frigate/repo
+cd /home/rootuser/frigate_new/repo
 python3 scripts/render.py
 cat generated/required-env.txt
 ```
@@ -183,7 +183,7 @@ bash scripts/validate.sh
 <div dir="ltr">
 
 ```bash
-cd /srv/frigate/repo
+cd /home/rootuser/frigate_new/repo
 git pull origin main
 bash scripts/deploy.sh
 ```
@@ -198,7 +198,7 @@ bash scripts/deploy.sh
 ## ۸) بازگردانی (Rollback)
 
 - **بازگردانی وضعیت مطلوب** با گیت (`git revert` یا reset روی `main`).
-- **بازگردانی config روی سرور** از پوشه‌ی `‏/srv/frigate/backups/<timestamp>/`.
+- **بازگردانی config روی سرور** از پوشه‌ی `‏/home/rootuser/frigate_new/backups/<timestamp>/`.
 
 جزئیات کامل: [docs/rollback.md](docs/rollback.md).
 
@@ -210,11 +210,11 @@ bash scripts/deploy.sh
 <div dir="ltr">
 
 ```bash
-sudo mkdir -p /srv/frigate/{secrets,media,runtime-config,backups}
-sudo git clone https://github.com/ast2019/cctv_izadshahr.git /srv/frigate/repo
-sudo cp /path/to/backup/.env /srv/frigate/secrets/.env
-sudo chmod 600 /srv/frigate/secrets/.env
-cd /srv/frigate/repo && bash scripts/deploy.sh
+sudo mkdir -p /home/rootuser/frigate_new/{secrets,media,runtime-config,backups}
+sudo git clone https://github.com/ast2019/cctv_izadshahr.git /home/rootuser/frigate_new/repo
+sudo cp /path/to/backup/.env /home/rootuser/frigate_new/secrets/.env
+sudo chmod 600 /home/rootuser/frigate_new/secrets/.env
+cd /home/rootuser/frigate_new/repo && bash scripts/deploy.sh
 ```
 
 </div>

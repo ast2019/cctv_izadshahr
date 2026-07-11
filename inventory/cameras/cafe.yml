@@ -4,7 +4,7 @@
 # IMPORTANT: never put IP addresses, usernames or passwords in this file.
 #
 # A "source" is a credential + host group. Every source maps to three runtime
-# variables that live ONLY in /srv/frigate/secrets/.env and are substituted by
+# variables that live ONLY in /home/rootuser/frigate_new/secrets/.env and are substituted by
 # Frigate at container start:
 #
 #   FRIGATE_CAFE_<SOURCE>_USER

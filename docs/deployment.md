@@ -21,7 +21,7 @@ inventory/ ──(scripts/render.py)──► generated/ ──(docker compose)�
 ## Runtime layout on the server
 
 ```
-/srv/frigate/
+/home/rootuser/frigate_new/
 ├── repo/                         # this git repository (checked out on server)
 ├── secrets/.env                  # real credentials (NEVER in git)
 ├── media/<instance>/             # per-instance media (NEVER in git)
@@ -42,17 +42,17 @@ Each container gets:
 
 ```bash
 # As a sudo-capable user on the Ubuntu server:
-sudo mkdir -p /srv/frigate/{secrets,media,runtime-config,backups}
-sudo git clone https://github.com/ast2019/cctv_izadshahr.git /srv/frigate/repo
+sudo mkdir -p /home/rootuser/frigate_new/{secrets,media,runtime-config,backups}
+sudo git clone https://github.com/ast2019/cctv_izadshahr.git /home/rootuser/frigate_new/repo
 
 # Create the secrets file from the template and fill in real values.
-sudo cp /srv/frigate/repo/.env.example /srv/frigate/secrets/.env
-sudo chmod 600 /srv/frigate/secrets/.env
-sudo "${EDITOR:-nano}" /srv/frigate/secrets/.env
+sudo cp /home/rootuser/frigate_new/repo/.env.example /home/rootuser/frigate_new/secrets/.env
+sudo chmod 600 /home/rootuser/frigate_new/secrets/.env
+sudo "${EDITOR:-nano}" /home/rootuser/frigate_new/secrets/.env
 ```
 
 Confirm every variable listed by `python3 scripts/render.py && cat
-generated/required-env.txt` has a value in `/srv/frigate/secrets/.env`.
+generated/required-env.txt` has a value in `/home/rootuser/frigate_new/secrets/.env`.
 
 ## Automatic deployment (recommended)
 
@@ -76,7 +76,7 @@ Every push to `main`:
 ## Manual deployment (from the server)
 
 ```bash
-cd /srv/frigate/repo
+cd /home/rootuser/frigate_new/repo
 git pull origin main
 bash scripts/deploy.sh
 ```
@@ -84,7 +84,7 @@ bash scripts/deploy.sh
 `scripts/deploy.sh` will, in order:
 1. render configs from the inventory,
 2. back up **all** current `config.yml` and `frigate.db` files into
-   `/srv/frigate/backups/<timestamp>/`,
+   `/home/rootuser/frigate_new/backups/<timestamp>/`,
 3. validate the generated compose file,
 4. for each instance sequentially: update **only** `config.yml`, recreate the
    container, and health-check its UI port before continuing.

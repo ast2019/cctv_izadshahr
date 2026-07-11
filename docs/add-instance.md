@@ -42,7 +42,7 @@ entry plus a camera file. No template, script, or workflow changes.
    ```
 
 4. **Add the new secrets** to `.env.example` (names only, no values) and to the
-   real `/srv/frigate/secrets/.env` on the server. To list exactly what is
+   real `/home/rootuser/frigate_new/secrets/.env` on the server. To list exactly what is
    needed:
 
    ```bash

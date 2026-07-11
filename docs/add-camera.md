@@ -13,7 +13,7 @@ Cameras live in `inventory/cameras/<instance>.yml`. That file has two sections:
 - **Never** put an IP address, username, or password in the inventory.
 - A source `foo` under instance `bar` maps to exactly three runtime variables:
   `FRIGATE_BAR_FOO_USER`, `FRIGATE_BAR_FOO_PASSWORD`, `FRIGATE_BAR_FOO_HOST`.
-  These live only in `/srv/frigate/secrets/.env`.
+  These live only in `/home/rootuser/frigate_new/secrets/.env`.
 - The rendered URL is
   `scheme://{USER}:{PASSWORD}@{HOST}:port<path>` — Frigate substitutes the
   `{FRIGATE_*}` placeholders at container start.

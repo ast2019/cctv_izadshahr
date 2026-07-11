@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
-BASE="${FRIGATE_BASE:-/srv/frigate}"
+BASE="${FRIGATE_BASE:-/home/rootuser/frigate_new}"
 RUNTIME="$BASE/runtime-config"
 BACKUP_ROOT="$BASE/backups"
 RETENTION="${FRIGATE_BACKUP_RETENTION:-30}"

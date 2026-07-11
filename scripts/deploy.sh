@@ -12,12 +12,12 @@
 #        - health-check the UI port before moving on.
 #
 # It NEVER deletes or overwrites frigate.db and NEVER touches media.
-# Expected to run from /srv/frigate/repo on the Ubuntu server.
+# Expected to run from /home/rootuser/frigate_new/repo on the Ubuntu server.
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
-REPO_DIR="${FRIGATE_REPO_DIR:-/srv/frigate/repo}"
-BASE="${FRIGATE_BASE:-/srv/frigate}"
+REPO_DIR="${FRIGATE_REPO_DIR:-/home/rootuser/frigate_new/repo}"
+BASE="${FRIGATE_BASE:-/home/rootuser/frigate_new}"
 RUNTIME="$BASE/runtime-config"
 MEDIA="$BASE/media"
 COMPOSE_FILE="$REPO_DIR/generated/compose.generated.yaml"

@@ -31,11 +31,11 @@ restored state.
 
 ## 2. Restore a config.yml from a server backup
 
-Every deployment writes to `/srv/frigate/backups/<timestamp>/` before changing
+Every deployment writes to `/home/rootuser/frigate_new/backups/<timestamp>/` before changing
 anything. To restore one instance's config:
 
 ```bash
-cd /srv/frigate
+cd /home/rootuser/frigate_new
 
 # List available backups (newest last)
 ls -1 backups/
@@ -60,20 +60,20 @@ runtime data.
 
 ```bash
 # 1. Recreate the layout
-sudo mkdir -p /srv/frigate/{secrets,media,runtime-config,backups}
+sudo mkdir -p /home/rootuser/frigate_new/{secrets,media,runtime-config,backups}
 
 # 2. Clone the repo
-sudo git clone https://github.com/ast2019/cctv_izadshahr.git /srv/frigate/repo
+sudo git clone https://github.com/ast2019/cctv_izadshahr.git /home/rootuser/frigate_new/repo
 
 # 3. Restore secrets (from your password manager / secure backup)
-sudo cp /path/to/backup/.env /srv/frigate/secrets/.env
-sudo chmod 600 /srv/frigate/secrets/.env
+sudo cp /path/to/backup/.env /home/rootuser/frigate_new/secrets/.env
+sudo chmod 600 /home/rootuser/frigate_new/secrets/.env
 
 # 4. (Optional) restore config.yml/frigate.db from an off-server backup copy
-#    into /srv/frigate/runtime-config/<instance>/ if you have one.
+#    into /home/rootuser/frigate_new/runtime-config/<instance>/ if you have one.
 
 # 5. Deploy — missing runtime-config/frigate.db is recreated by Frigate on start
-cd /srv/frigate/repo
+cd /home/rootuser/frigate_new/repo
 bash scripts/deploy.sh
 ```
 
