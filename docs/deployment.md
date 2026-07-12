@@ -53,6 +53,8 @@ sudo "${EDITOR:-nano}" /home/rootuser/frigate_new/secrets/.env
 
 Confirm every variable listed by `python3 scripts/render.py && cat
 generated/required-env.txt` has a value in `/home/rootuser/frigate_new/secrets/.env`.
+When inventory changes, refresh `.env.example` with:
+`python3 scripts/sync-env-example.py --write`.
 
 ## Automatic deployment (recommended)
 
@@ -95,6 +97,7 @@ It never deletes or overwrites `frigate.db` and never touches media.
 
 ```bash
 pip install jinja2 pyyaml
+python3 scripts/sync-env-example.py --write
 bash scripts/validate.sh     # render + validate, no server or secrets needed
 ```
 
