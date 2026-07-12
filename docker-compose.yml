@@ -1,0 +1,65 @@
+# =============================================================================
+# Frigate — simple multi-instance stack
+# Bring up everything:      docker compose up -d
+# Bring up one instance:    docker compose up -d frigate-cafe
+# View logs:                docker compose logs -f frigate-cafe
+# =============================================================================
+name: frigate
+
+x-frigate-common: &frigate-common
+  image: ghcr.io/blakeblackshear/frigate:0.16.4
+  restart: unless-stopped
+  stop_grace_period: 30s
+  shm_size: "256mb"
+  # Camera passwords come from .env (git-ignored). Optional so `docker compose
+  # config` still works when .env is absent (e.g. in CI).
+  env_file:
+    - path: .env
+      required: false
+  tmpfs:
+    - /tmp/cache
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  frigate-cafe:
+    <<: *frigate-common
+    container_name: frigate-cafe
+    volumes:
+      - ./config/cafe:/config
+      - ./media/cafe:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8972:8971"      # web UI
+      - "8556:8554"      # RTSP
+      - "8557:8555/tcp"  # WebRTC
+      - "8557:8555/udp"  # WebRTC
+
+  frigate-center11:
+    <<: *frigate-common
+    container_name: frigate-center11
+    volumes:
+      - ./config/center11:/config
+      - ./media/center11:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8973:8971"
+      - "8558:8554"
+      - "8559:8555/tcp"
+      - "8559:8555/udp"
+
+  frigate-center22:
+    <<: *frigate-common
+    container_name: frigate-center22
+    volumes:
+      - ./config/center22:/config
+      - ./media/center22:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8974:8971"
+      - "8560:8554"
+      - "8561:8555/tcp"
+      - "8561:8555/udp"

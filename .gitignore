@@ -1,38 +1,13 @@
-# =============================================================================
-# Secrets — never commit real credentials
-# =============================================================================
+# Secrets
 .env
-*.env
-!.env.example
 
-# =============================================================================
-# Runtime data & media — never commit
-# =============================================================================
+# Media (recordings, snapshots, clips)
 media/
-runtime-config/**/frigate.db*
-runtime-config/**/cache/
-runtime-config/**/exports/
-runtime-config/**/clips/
-runtime-config/**/recordings/
 
-# Server-side backups (produced by scripts/backup-config.sh)
-backups/
+# Frigate runtime data written into the config dirs
+config/**/frigate.db*
+config/**/model_cache/
+config/**/*.log
 
-# =============================================================================
-# Generated output — inventory/ is the single source of truth
-# =============================================================================
-generated/
-
-# =============================================================================
-# Python
-# =============================================================================
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-
-# =============================================================================
-# Editor / OS cruft
-# =============================================================================
+# OS cruft
 .DS_Store
-*.swp

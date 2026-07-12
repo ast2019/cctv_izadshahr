@@ -2,34 +2,19 @@ name: validate
 
 on:
   push:
-    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
 jobs:
-  render-and-validate:
+  compose:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install render dependencies
-        run: pip install --disable-pip-version-check jinja2 pyyaml
-
-      - name: Render configs from inventory
-        run: python3 scripts/render.py
-
-      - name: Validate generated compose file
-        run: docker compose -f generated/compose.generated.yaml config -q
-
-      - name: Validate generated Frigate YAML
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose
+        run: docker compose config -q
+      - name: Check every config.yml is valid YAML
         run: |
-          for cfg in generated/config/*/config.yml; do
+          for cfg in config/*/config.yml; do
             python3 -c "import sys, yaml; yaml.safe_load(open(sys.argv[1]))" "$cfg"
             echo "ok: $cfg"
           done
