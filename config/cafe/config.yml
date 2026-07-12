@@ -4,6 +4,9 @@
 #   * recording reads from the local restream => 1 connection per camera.
 #   * record uses stream copy (no re-encode) => native quality, minimal CPU.
 # Shared password lives in .env as FRIGATE_RTSP_PASSWORD (username/IP inline).
+#
+# STATUS: DVR (192.168.51.204) works. The 5 IP cameras are commented out at the
+# bottom until each one's correct RTSP URL / codec is confirmed (see notes).
 # =============================================================================
 mqtt:
   enabled: false
@@ -49,16 +52,18 @@ go2rtc:
       - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
     dvr_cafe_ch10:
       - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=10&subtype=0
-    ipcam_parking3_90:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.90:554/Streaming/Channels/101
-    ipcam_parking3_89:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.89:554/Streaming/Channels/101
-    ipcam_ashpazkhane_99:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.99:554/Streaming/Channels/101
-    ipcam_rest_100:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.100:554/Streaming/Channels/101
-    ipcam_rest_101:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.101:554/Streaming/Channels/101
+
+    # --- IP cameras: disabled until each URL/codec is confirmed --------------
+    # ipcam_parking3_90:   # was: unspecified size on /Streaming/Channels/101 -> try /stream1
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.90:554/stream1
+    # ipcam_parking3_89:   # was: connection timed out -> verify it is online / correct path
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.89:554/stream1
+    # ipcam_ashpazkhane_99:  # H.265 multi-layer: copies fine (record), set cam to H.264 for live
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.99:554/Streaming/Channels/101
+    # ipcam_rest_100:      # was: connection timed out
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.100:554/Streaming/Channels/101
+    # ipcam_rest_101:      # was: connection timed out -> try /stream1
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.101:554/stream1
 
 cameras:
   dvr_cafe_ch1:
@@ -109,35 +114,37 @@ cameras:
         - path: rtsp://127.0.0.1:8554/dvr_cafe_ch10
           input_args: preset-rtsp-restream
           roles: [record]
-  ipcam_parking3_90:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_parking3_90
-          input_args: preset-rtsp-restream
-          roles: [record]
-  ipcam_parking3_89:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_parking3_89
-          input_args: preset-rtsp-restream
-          roles: [record]
-  ipcam_ashpazkhane_99:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_ashpazkhane_99
-          input_args: preset-rtsp-restream
-          roles: [record]
-  ipcam_rest_100:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_rest_100
-          input_args: preset-rtsp-restream
-          roles: [record]
-  ipcam_rest_101:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_rest_101
-          input_args: preset-rtsp-restream
-          roles: [record]
+
+  # --- IP cameras: uncomment matching go2rtc stream above + block below -------
+  # ipcam_parking3_90:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/ipcam_parking3_90
+  #         input_args: preset-rtsp-restream
+  #         roles: [record]
+  # ipcam_parking3_89:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/ipcam_parking3_89
+  #         input_args: preset-rtsp-restream
+  #         roles: [record]
+  # ipcam_ashpazkhane_99:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/ipcam_ashpazkhane_99
+  #         input_args: preset-rtsp-restream
+  #         roles: [record]
+  # ipcam_rest_100:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/ipcam_rest_100
+  #         input_args: preset-rtsp-restream
+  #         roles: [record]
+  # ipcam_rest_101:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/ipcam_rest_101
+  #         input_args: preset-rtsp-restream
+  #         roles: [record]
 
 version: 0.16-0
