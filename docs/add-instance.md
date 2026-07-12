@@ -41,12 +41,12 @@ entry plus a camera file. No template, script, or workflow changes.
        path: "/cam/realmonitor?channel=1&subtype=0"
    ```
 
-4. **Add the new secrets** to `.env.example` (names only, no values) and to the
-   real `/home/rootuser/frigate_new/secrets/.env` on the server. To list exactly what is
-   needed:
+4. **Sync env variable names automatically** into `.env.example`, then fill the
+   real `/home/rootuser/frigate_new/secrets/.env` on the server:
 
    ```bash
    python3 scripts/render.py
+   python3 scripts/sync-env-example.py --write
    cat generated/required-env.txt
    ```
 

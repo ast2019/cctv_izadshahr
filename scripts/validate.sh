@@ -13,8 +13,15 @@ python3 scripts/render.py
 
 COMPOSE_FILE="generated/compose.generated.yaml"
 
-echo "==> Validating $COMPOSE_FILE"
-docker compose -f "$COMPOSE_FILE" config -q
+echo "==> Checking .env.example sync"
+python3 scripts/sync-env-example.py
+
+if command -v docker >/dev/null 2>&1; then
+  echo "==> Validating $COMPOSE_FILE"
+  docker compose -f "$COMPOSE_FILE" config -q
+else
+  echo "==> Skipping compose validation (docker not available in this environment)"
+fi
 
 echo "==> Validating generated Frigate YAML syntax"
 for cfg in generated/config/*/config.yml; do

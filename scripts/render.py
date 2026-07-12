@@ -17,6 +17,7 @@ matching cameras/<name>.yml file — no code changes required.
 from __future__ import annotations
 
 import pathlib
+import re
 import sys
 
 try:
@@ -82,12 +83,49 @@ def build_camera(instance_name: str, cam_name: str, cam: dict, sources: dict) ->
     }
 
 
+def validate_instances(instances: list[dict]) -> None:
+    """Fail early on collisions that make deployments hard to scale safely."""
+    name_pattern = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+    names: set[str] = set()
+    used_ports: dict[int, str] = {}
+
+    for idx, instance in enumerate(instances, start=1):
+        name = instance.get("name")
+        if not name:
+            sys.exit(f"Instance #{idx} is missing required field: name")
+        if not isinstance(name, str):
+            sys.exit(f"Instance #{idx} has non-string name: {name!r}")
+        if not name_pattern.match(name):
+            sys.exit(
+                f"Instance '{name}' has invalid name. Use lowercase letters, digits, '_' or '-'."
+            )
+        if name in names:
+            sys.exit(f"Duplicate instance name: '{name}'")
+        names.add(name)
+
+        for port_key in ("ui_port", "rtsp_port", "webrtc_port"):
+            if port_key not in instance:
+                sys.exit(f"Instance '{name}' is missing required field: {port_key}")
+            port = instance[port_key]
+            if not isinstance(port, int):
+                sys.exit(
+                    f"Instance '{name}' field '{port_key}' must be an integer, got {port!r}"
+                )
+            owner = used_ports.get(port)
+            if owner is not None:
+                sys.exit(
+                    f"Port collision: instance '{name}' {port_key}={port} already used by {owner}"
+                )
+            used_ports[port] = f"instance '{name}'"
+
+
 def main() -> int:
     inventory = load_yaml(INVENTORY / "instances.yml")
     settings = inventory.get("global", {})
     instances = inventory.get("instances", [])
     if not instances:
         sys.exit("No instances defined in inventory/instances.yml")
+    validate_instances(instances)
 
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES)),

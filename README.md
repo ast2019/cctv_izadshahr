@@ -44,9 +44,10 @@ templates/
   compose.instance.yml.j2  # قالب سرویس Compose برای هر نمونه
 scripts/
   render.py                # رندر اینونتوری → generated/
-  validate.sh              # رندر + اعتبارسنجی
+  validate.sh              # رندر + اعتبارسنجی + بررسی همگام‌بودن .env.example
   deploy.sh                # استقرار سمت سرور (بکاپ، رندر، health-check)
   backup-config.sh         # بکاپ config.yml و frigate.db
+  sync-env-example.py      # همگام‌سازی خودکار .env.example
 docs/                      # مستندات تفصیلی (انگلیسی)
 .github/workflows/         # validate.yml و deploy.yml
 .env.example               # فهرست متغیرها (بدون مقدار)
@@ -78,6 +79,7 @@ docs/                      # مستندات تفصیلی (انگلیسی)
 
 ```bash
 pip install jinja2 pyyaml
+python3 scripts/sync-env-example.py --write
 bash scripts/validate.sh
 ```
 
@@ -144,15 +146,19 @@ cameras:
 
 </div>
 
-اگر دستگاه جدید است، ابتدا یک `source` بسازید و سپس سه متغیر جدید را به
-`.env.example` و به `.env` سرور اضافه کنید. جزئیات کامل در
+اگر دستگاه جدید است، ابتدا یک `source` بسازید، سپس:
+1) `python3 scripts/sync-env-example.py --write` را اجرا کنید تا
+`.env.example` خودکار به‌روزرسانی شود،
+2) همان متغیرها را در `.env` سرور مقداردهی کنید.
+جزئیات کامل در
 [docs/add-camera.md](docs/add-camera.md).
 
 ## ۵) افزودن نمونه (Adding an instance)
 
 ۱. پورت‌های یکتا انتخاب کنید و به `inventory/instances.yml` اضافه کنید.
 ۲. فایل `inventory/cameras/<name>.yml` را بسازید.
-۳. متغیرهای جدید را به `.env.example` و `.env` سرور اضافه کنید.
+۳. `python3 scripts/sync-env-example.py --write` را اجرا کنید تا
+   `.env.example` خودکار همگام شود، سپس همان متغیرها را در `.env` سرور وارد کنید.
 ۴. اعتبارسنجی و push به `main`.
 
 راهنمای گام‌به‌گام: [docs/add-instance.md](docs/add-instance.md).
