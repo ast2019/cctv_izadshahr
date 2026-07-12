@@ -10,7 +10,7 @@ x-frigate-common: &frigate-common
   image: ghcr.io/blakeblackshear/frigate:0.16.3
   restart: unless-stopped
   stop_grace_period: 30s
-  shm_size: "256mb"
+  shm_size: "1gb"   # enough for ~13 cameras; tmpfs grows on demand up to this cap
   # Camera passwords come from .env (git-ignored). Optional so `docker compose
   # config` still works when .env is absent (e.g. in CI).
   env_file:
