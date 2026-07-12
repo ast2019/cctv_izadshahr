@@ -1,11 +1,14 @@
+# =============================================================================
+# cafe — NVR-only (record + live view, NO detection). Tuned for low CPU:
+#   * go2rtc pulls each camera ONCE (main stream, full quality).
+#   * recording reads from the local restream => 1 connection per camera.
+#   * record uses stream copy (no re-encode) => native quality, minimal CPU.
+# Shared password lives in .env as FRIGATE_RTSP_PASSWORD (username/IP inline).
+# =============================================================================
 mqtt:
   enabled: false
 
-detectors:
-  cpu1:
-    type: cpu
-
-birdseye:
+detect:
   enabled: false
 
 record:
@@ -19,163 +22,122 @@ record:
 snapshots:
   enabled: false
 
-detect:
+birdseye:
   enabled: false
 
 ffmpeg:
   global_args: -hide_banner -loglevel warning
-  input_args: preset-rtsp-generic
   output_args:
     record: preset-record-generic
 
-# Password comes from .env as FRIGATE_CAFE_PASSWORD (username/IP are inline).
+# One connection per camera. Frigate substitutes {FRIGATE_RTSP_PASSWORD} here.
+go2rtc:
+  streams:
+    dvr_cafe_ch1:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=1&subtype=0
+    dvr_cafe_ch2:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=2&subtype=0
+    dvr_cafe_ch4:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=4&subtype=0
+    dvr_cafe_ch5:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=5&subtype=0
+    dvr_cafe_ch6:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=6&subtype=0
+    dvr_cafe_ch7:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=7&subtype=0
+    dvr_cafe_ch8:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
+    dvr_cafe_ch10:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=10&subtype=0
+    ipcam_parking3_90:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.90:554/Streaming/Channels/101
+    ipcam_parking3_89:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.89:554/Streaming/Channels/101
+    ipcam_ashpazkhane_99:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.99:554/Streaming/Channels/101
+    ipcam_rest_100:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.100:554/Streaming/Channels/101
+    ipcam_rest_101:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.101:554/Streaming/Channels/101
+
 cameras:
   dvr_cafe_ch1:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=1&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=1&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch1
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch2:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=2&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=2&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch2
+          input_args: preset-rtsp-restream
           roles: [record]
-
   dvr_cafe_ch4:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=4&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=4&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch4
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch5:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=5&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=5&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch5
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch6:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=6&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=6&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch6
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch7:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=7&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=7&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch7
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch8:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=8&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch8
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   dvr_cafe_ch10:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=10&subtype=1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=10&subtype=0
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch10
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   ipcam_parking3_90:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.90:554/stream1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.90:554/Streaming/Channels/101
+        - path: rtsp://127.0.0.1:8554/ipcam_parking3_90
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   ipcam_parking3_89:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.89:554/stream1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.89:554/Streaming/Channels/101
+        - path: rtsp://127.0.0.1:8554/ipcam_parking3_89
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
   ipcam_ashpazkhane_99:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.99:554/Streaming/Channels/101
-          roles: [record, detect]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
+        - path: rtsp://127.0.0.1:8554/ipcam_ashpazkhane_99
+          input_args: preset-rtsp-restream
+          roles: [record]
   ipcam_rest_100:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.100:554/Streaming/Channels/101
-          roles: [record, detect]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
-
+        - path: rtsp://127.0.0.1:8554/ipcam_rest_100
+          input_args: preset-rtsp-restream
+          roles: [record]
   ipcam_rest_101:
     ffmpeg:
       inputs:
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.101:554/stream1
-          roles: [detect]
-        - path: rtsp://admin:{FRIGATE_CAFE_PASSWORD}@192.168.51.101:554/Streaming/Channels/101
+        - path: rtsp://127.0.0.1:8554/ipcam_rest_101
+          input_args: preset-rtsp-restream
           roles: [record]
-    motion:
-      threshold: 30
-      contour_area: 10
-      improve_contrast: false
 
 version: 0.16-0
