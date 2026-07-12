@@ -7,7 +7,7 @@
 name: frigate
 
 x-frigate-common: &frigate-common
-  image: ghcr.io/blakeblackshear/frigate:0.16.4
+  image: ghcr.io/blakeblackshear/frigate:0.16.3
   restart: unless-stopped
   stop_grace_period: 30s
   shm_size: "256mb"
