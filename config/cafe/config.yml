@@ -1,4 +1,4 @@
-# cafe — record-only NVR (no detection). Password: FRIGATE_RTSP_PASSWORD in .env
+# cafe — record-only NVR (no detection). Camera RTSP password inline in URLs.
 mqtt:
   enabled: false
 
@@ -24,21 +24,21 @@ ffmpeg:
 go2rtc:
   streams:
     dvr_cafe_ch1:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=1&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=1&subtype=0
     dvr_cafe_ch2:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=2&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=2&subtype=0
     dvr_cafe_ch4:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=4&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=4&subtype=0
     dvr_cafe_ch5:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=5&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=5&subtype=0
     dvr_cafe_ch6:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=6&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=6&subtype=0
     dvr_cafe_ch7:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=7&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=7&subtype=0
     dvr_cafe_ch8:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
-    dvr_cafe_ch10:
-      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.51.204:554/cam/realmonitor?channel=10&subtype=0
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
+    dvr_cafe_ch3:
+      - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=3&subtype=0
 
 cameras:
   dvr_cafe_ch1:
@@ -83,10 +83,10 @@ cameras:
         - path: rtsp://127.0.0.1:8554/dvr_cafe_ch8
           input_args: preset-rtsp-restream
           roles: [record]
-  dvr_cafe_ch10:
+  dvr_cafe_ch3:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch10
+        - path: rtsp://127.0.0.1:8554/dvr_cafe_ch3
           input_args: preset-rtsp-restream
           roles: [record]
 

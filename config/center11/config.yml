@@ -1,8 +1,4 @@
-# =============================================================================
-# center11 — SKELETON (NVR-only pattern). Fill in real cameras, then:
-#   docker compose up -d frigate-center11
-# Shared password: FRIGATE_RTSP_PASSWORD (in .env). Username/IP go inline.
-# =============================================================================
+# center11 — IP cameras (cam 4,5,6,9,13,41). cam_201 = duplicate of cam_41 — removed.# Camera RTSP password is inline in each URL (admin:admin123).
 mqtt:
   enabled: false
 
@@ -12,8 +8,8 @@ detect:
 record:
   enabled: true
   retain:
-    days: 2
-    mode: all
+    days: 3
+    mode: motion
 
 snapshots:
   enabled: false
@@ -26,18 +22,63 @@ ffmpeg:
   output_args:
     record: preset-record-generic
 
-# Fill these in. One go2rtc stream + one record-only camera per channel.
 go2rtc:
-  streams: {}
-  #  cam1:
-  #    - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@192.168.1.10:554/cam/realmonitor?channel=1&subtype=0
+  streams:
+    cam_5:
+      - rtsp://admin:admin123@192.168.51.5:554/Streaming/Channels/102
+    cam_6:
+      - rtsp://admin:admin123@192.168.51.6:554/Streaming/Channels/102
+    cam_9:
+      - rtsp://admin:admin123@192.168.51.9:554/Streaming/Channels/102
+    # cam_16: offline — disabled temporarily
+    #   - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
+    # cam_14: offline — disabled temporarily
+    #   - rtsp://admin:admin123@192.168.51.14:554/Streaming/Channels/102
+    cam_13:
+      - rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102
+    cam_41:
+      - rtsp://admin:admin123@192.168.51.41:554/Streaming/Channels/102
+    cam_4:
+      - rtsp://admin:admin123@192.168.51.4:554/Streaming/Channels/102
 
-cameras: {}
-  #  cam1:
-  #    ffmpeg:
-  #      inputs:
-  #        - path: rtsp://127.0.0.1:8554/cam1
-  #          input_args: preset-rtsp-restream
-  #          roles: [record]
+cameras:
+  cam_5:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_5
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_6:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_6
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_9:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_9
+          input_args: preset-rtsp-restream
+          roles: [record]
+  # cam_16: offline — disabled temporarily
+  # cam_14: offline — disabled temporarily
+  cam_13:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_13
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_41:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_41
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_4:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_4
+          input_args: preset-rtsp-restream
+          roles: [record]
 
 version: 0.16-0

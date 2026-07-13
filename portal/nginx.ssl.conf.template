@@ -1,0 +1,78 @@
+# HTTPS nginx — enabled after init-ssl.sh (profile: ssl)
+# Replaces nginx.conf mount when CCTV_DOMAIN is set
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    server_name ${CCTV_DOMAIN} cafe.${CCTV_DOMAIN} center11.${CCTV_DOMAIN};
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ${CCTV_DOMAIN};
+    ssl_certificate /etc/letsencrypt/live/${CCTV_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CCTV_DOMAIN}/privkey.pem;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    location /api/host-metrics/ {
+        proxy_pass http://portal-metrics:9090/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    location /health/cafe/ {
+        proxy_pass https://frigate-cafe:8971/api/version;
+        proxy_ssl_verify off;
+    }
+    location /health/center11/ {
+        proxy_pass https://frigate-center11:8971/api/version;
+        proxy_ssl_verify off;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name cafe.${CCTV_DOMAIN};
+    ssl_certificate /etc/letsencrypt/live/${CCTV_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CCTV_DOMAIN}/privkey.pem;
+
+    location / {
+        proxy_pass https://frigate-cafe:8971/;
+        proxy_ssl_verify off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name center11.${CCTV_DOMAIN};
+    ssl_certificate /etc/letsencrypt/live/${CCTV_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${CCTV_DOMAIN}/privkey.pem;
+
+    location / {
+        proxy_pass https://frigate-center11:8971/;
+        proxy_ssl_verify off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}

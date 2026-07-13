@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>هتل ساحلی شهر — نظارت تصویری</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css?v=1.2.3" />
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <header class="header">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="assets/logo.png" alt="لوگوی مجتمع گردشگری شهر" width="120" height="auto" />
+      </div>
+      <div class="brand-text">
+        <p class="holding">هلدینگ شهرآیین</p>
+        <h1>هتل ساحلی شهر</h1>
+        <p class="subtitle">سیستم نظارت تصویری — انتخاب بخش</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div id="user-bar" class="user-bar" hidden>
+        <span class="user-name"></span>
+        <button type="button" id="logout-btn" class="btn-logout">خروج</button>
+      </div>
+      <span class="clock" id="clock">--:--</span>
+    </div>
+  </header>
+
+  <div id="login-modal" class="login-modal">
+    <div class="login-box">
+      <h2>ورود به سیستم</h2>
+      <p class="login-hint">یک‌بار وارد شوید — همه بخش‌ها باز می‌شوند</p>
+      <p class="login-creds" data-auth-creds></p>
+      <form id="login-form" autocomplete="off">
+        <label>
+          نام کاربری
+          <input type="text" name="username" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" required />
+        </label>
+        <label>
+          رمز عبور
+          <input type="password" name="password" dir="ltr" autocomplete="new-password" autocapitalize="off" spellcheck="false" required />
+        </label>
+        <label class="show-pass-label">
+          <input type="checkbox" id="show-password" />
+          نمایش رمز
+        </label>
+        <div class="login-quick" id="login-quick"></div>
+        <p id="login-error" class="login-error" role="alert"></p>
+        <button type="submit" class="btn-primary">ورود</button>
+      </form>
+    </div>
+  </div>
+
+  <main class="main">
+    <section class="intro">
+      <p>ابتدا وارد شوید، سپس روی هر بخش بزنید.</p>
+    </section>
+
+    <section id="system-status" class="system-status system-status--unknown" hidden aria-live="polite">
+      <h2 class="system-status-title">وضعیت سرور اصلی</h2>
+    </section>
+
+    <div class="cards" id="cards"></div>
+
+    <footer class="site-footer">
+      <p class="footer-note" data-auth-creds></p>
+      <p class="footer-brand">مجتمع گردشگری شهر · ایزدشهر</p>
+      <p class="footer-version">نسخه <span id="portal-version">—</span></p>
+    </footer>
+
+    <aside id="changelog" class="changelog" aria-label="تازه‌ها" hidden></aside>
+  </main>
+
+  <script src="js/changelog.js?v=1.2.3"></script>
+  <script src="js/auth-config.js?v=1.2.3"></script>
+  <script src="js/sites.js?v=1.2.3"></script>
+  <script src="js/changelog-ui.js?v=1.2.3"></script>
+  <script src="js/load-monitor.js?v=1.2.3"></script>
+  <script src="js/app.js?v=1.2.3"></script>
+</body>
+</html>

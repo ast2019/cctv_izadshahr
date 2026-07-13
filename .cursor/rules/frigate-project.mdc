@@ -1,0 +1,54 @@
+---
+description: Frigate multi-instance project rules for cctv_izadshahr
+alwaysApply: true
+---
+
+# cctv_izadshahr — Project Rules
+
+## Instances
+
+| Instance | Container | UI port | Config |
+|----------|-----------|---------|--------|
+| cafe | frigate-cafe | 8972 | config/cafe/config.yml |
+| center11 | frigate-center11 | 8973 | config/center11/config.yml |
+| center22 | frigate-center22 | 8974 | config/center22/config.yml |
+
+Always use authenticated UI port mapping (`897x` → internal `8971`). Never expose port `5000`.
+
+## Camera config rules
+
+0. **Inventory**: Full camera list with IPs/passwords/status → `docs/CAMERAS.md`. Update it when adding/removing cameras.
+1. **Naming**: IP cameras → `cam_<last_octet>` (e.g. `cam_5` for `192.168.51.5`). DVR channels → `dvr_<site>_ch<N>`.
+2. **No duplicates**: A camera name must appear in only one instance. Before adding, grep all `config/*/config.yml` files.
+3. **RTSP password**: Write inline in each instance config URL (`rtsp://admin:PASSWORD@IP:554/...`). Do NOT use `.env` or `{FRIGATE_RTSP_PASSWORD}`.
+4. **go2rtc pattern**: One go2rtc stream per camera; recording reads from `rtsp://127.0.0.1:8554/<name>` with `preset-rtsp-restream`.
+5. **Record-only**: `detect.enabled: false` unless explicitly requested.
+6. After config change: `docker compose restart frigate-<instance>`.
+
+## Portal frontend (portal/)
+
+- **Semver** in `portal/js/changelog.js` → `PORTAL_VERSION`. Bump on every portal change:
+  - `patch`: bugfix / style
+  - `minor`: new feature
+  - `major`: breaking redesign
+- **Changelog** in same file → `CHANGELOG[]`. Each entry: `date`, `version`, `items[]`.
+  - Shown at bottom of portal for **2 days** then auto-hidden.
+  - Add a new entry (or extend today's) when shipping portal updates.
+
+## UI auth (separate from camera RTSP)
+
+- Frigate UI users live in `config/<instance>/frigate.db` per instance.
+- On first boot, admin password is random and printed in logs:
+  `docker compose logs <service> 2>&1 | grep -i password`
+- Reset admin: add `auth: { reset_admin_password: true }` to config, restart, read log, remove flag.
+- Sync users across instances: `scripts/sync-frigate-users.sh` (requires running containers).
+- Standard viewer user: `ceo` / role `viewer` (password set by operator, not committed).
+
+## Deploy workflow
+
+1. Edit `config/<instance>/config.yml` locally.
+2. Upload to server `/home/rootuser/cctv_izadshahr/`.
+3. `sudo docker compose restart frigate-<instance>`.
+4. Verify: `docker compose ps` and `docker compose logs --tail=30 frigate-<instance>`.
+
+Server SSH: `rootuser@192.168.10.18`, project path `/home/rootuser/cctv_izadshahr`. Docker commands need `sudo`.
