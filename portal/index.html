@@ -14,10 +14,8 @@
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/main.css?v=1.5.2" />
+  <link rel="stylesheet" href="css/fonts.css?v=1.6.2" />
+  <link rel="stylesheet" href="css/main.css?v=1.6.2" />
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -45,6 +43,39 @@
 
   <div id="login-modal" class="login-modal">
     <div class="login-box">
+      <div class="cctv-mascot" id="cctv-mascot" aria-hidden="true">
+        <svg viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- wall mount -->
+          <rect x="68" y="8" width="24" height="14" rx="3" fill="#3a3f4a"/>
+          <rect x="74" y="20" width="12" height="10" fill="#4b5160"/>
+          <!-- arm -->
+          <path d="M80 30 L80 48 L118 58" stroke="#5a6170" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <!-- camera body -->
+          <g class="cctv-body">
+            <ellipse cx="128" cy="62" rx="26" ry="22" fill="#2a2e38"/>
+            <ellipse cx="128" cy="62" rx="26" ry="22" fill="none" stroke="#4b5160" stroke-width="2"/>
+            <!-- lens ring -->
+            <circle cx="118" cy="62" r="14" fill="#1a1d24" stroke="#6b7280" stroke-width="2"/>
+            <circle cx="118" cy="62" r="10" fill="#0f1115"/>
+            <!-- eyes -->
+            <g class="cctv-eyes">
+              <ellipse class="cctv-eye cctv-eye--l" cx="113" cy="61" rx="3.2" ry="4" fill="#22c55e"/>
+              <ellipse class="cctv-eye cctv-eye--r" cx="123" cy="61" rx="3.2" ry="4" fill="#22c55e"/>
+              <circle class="cctv-pupil cctv-pupil--l" cx="113.5" cy="62" r="1.3" fill="#0a0c10"/>
+              <circle class="cctv-pupil cctv-pupil--r" cx="123.5" cy="62" r="1.3" fill="#0a0c10"/>
+            </g>
+            <!-- closed lids -->
+            <g class="cctv-lids" opacity="0">
+              <path d="M108 61 Q113 56 118 61" stroke="#22c55e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <path d="M118 61 Q123 56 128 61" stroke="#22c55e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            </g>
+            <!-- status LED -->
+            <circle class="cctv-led" cx="138" cy="48" r="3" fill="#e60000"/>
+            <!-- label -->
+            <text x="128" y="92" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="Vazirmatn,sans-serif">CCTV</text>
+          </g>
+        </svg>
+      </div>
       <h2>ورود به سیستم</h2>
       <p class="login-hint">یک‌بار وارد شوید — همه بخش‌ها باز می‌شوند</p>
       <form id="login-form" autocomplete="off">
@@ -58,7 +89,7 @@
         </label>
         <label class="show-pass-label">
           <input type="checkbox" id="show-password" />
-          نمایش رمز
+          <span>نمایش رمز</span>
         </label>
         <div class="login-quick" id="login-quick"></div>
         <p id="login-error" class="login-error" role="alert"></p>
@@ -120,19 +151,21 @@
     <aside id="changelog" class="changelog" aria-label="تازه‌ها" hidden></aside>
   </main>
 
-  <script src="js/changelog.js?v=1.5.2"></script>
-  <script src="js/auth-config.js?v=1.5.2"></script>
-  <script src="js/sites.js?v=1.5.2"></script>
-  <script src="js/changelog-ui.js?v=1.5.2"></script>
-  <script src="js/load-monitor.js?v=1.5.2"></script>
-  <script src="js/admin-panel.js?v=1.5.2"></script>
-  <script src="js/app.js?v=1.5.2"></script>
+  <script src="js/changelog.js?v=1.6.2"></script>
+  <script src="js/auth-config.js?v=1.6.2"></script>
+  <script src="js/sites.js?v=1.6.2"></script>
+  <script src="js/changelog-ui.js?v=1.6.2"></script>
+  <script src="js/load-monitor.js?v=1.6.2"></script>
+  <script src="js/admin-panel.js?v=1.6.2"></script>
+  <script src="js/ambiance.js?v=1.6.2"></script>
+  <script src="js/app.js?v=1.6.2"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
       });
     }
+    window.AmbianceRails?.start();
   </script>
 </body>
 </html>

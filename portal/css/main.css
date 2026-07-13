@@ -60,6 +60,128 @@ body {
   z-index: 0;
 }
 
+/* Wide-only ambiance snapshot rails (hidden on phone / small laptop) */
+.ambiance-rail {
+  display: none;
+}
+
+@media (min-width: 1500px) {
+  body.has-ambiance .ambiance-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    position: fixed;
+    top: 5.5rem;
+    bottom: 1.5rem;
+    width: clamp(140px, 11vw, 210px);
+    z-index: 1;
+    pointer-events: none;
+    overflow: visible;
+    will-change: transform;
+  }
+
+  .ambiance-rail--left {
+    left: max(0.75rem, calc((100vw - 1100px) / 2 - 230px));
+  }
+
+  .ambiance-rail--right {
+    right: max(0.75rem, calc((100vw - 1100px) / 2 - 230px));
+  }
+
+  .ambiance-tile {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 90px;
+    opacity: 0;
+    will-change: transform;
+    animation: ambiance-in 0.7s ease both;
+    animation-delay: calc(var(--i, 0) * 0.08s);
+  }
+
+  .ambiance-rail {
+    will-change: transform;
+    transition: none;
+  }
+
+  .ambiance-tile-inner {
+    height: 100%;
+    min-height: 90px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    opacity: 0.55;
+    filter: saturate(0.85) brightness(0.78);
+    transition: opacity 0.4s ease, filter 0.4s ease;
+  }
+
+  .ambiance-tile:nth-child(odd) .ambiance-tile-inner {
+    transform: rotate(-1.2deg);
+  }
+
+  .ambiance-tile:nth-child(even) .ambiance-tile-inner {
+    transform: rotate(1deg);
+  }
+
+  .ambiance-rail--left .ambiance-tile:nth-child(3n) .ambiance-tile-inner {
+    margin-inline-start: 0.6rem;
+  }
+
+  .ambiance-rail--right .ambiance-tile:nth-child(3n) .ambiance-tile-inner {
+    margin-inline-end: 0.6rem;
+  }
+
+  .ambiance-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    min-height: 90px;
+  }
+
+  .ambiance-tile-inner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(15, 17, 21, 0.75));
+    pointer-events: none;
+  }
+
+  .ambiance-tile-inner {
+    position: relative;
+  }
+
+  .ambiance-caption {
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.4rem;
+    z-index: 1;
+    font-size: 0.65rem;
+    color: rgba(240, 242, 245, 0.75);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+    text-align: left;
+  }
+
+  body.has-ambiance .ambiance-tile-inner:hover {
+    opacity: 0.85;
+    filter: saturate(1) brightness(0.92);
+  }
+}
+
+@keyframes ambiance-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -513,6 +635,78 @@ body {
   box-shadow: var(--shadow);
 }
 
+.login-box h2,
+.login-hint {
+  text-align: center;
+}
+
+.cctv-mascot {
+  width: 140px;
+  height: 105px;
+  margin: 0 auto 0.75rem;
+  transition: transform 0.35s ease;
+}
+
+.cctv-mascot svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cctv-body {
+  transform-origin: 128px 62px;
+  transition: transform 0.35s ease;
+}
+
+.cctv-eyes,
+.cctv-lids {
+  transition: opacity 0.2s ease;
+}
+
+.cctv-led {
+  animation: cctv-blink 2.4s ease-in-out infinite;
+}
+
+@keyframes cctv-blink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.25; }
+}
+
+/* shy: password focus — close eyes */
+.cctv-mascot--shy .cctv-eyes {
+  opacity: 0;
+}
+
+.cctv-mascot--shy .cctv-lids {
+  opacity: 1;
+}
+
+.cctv-mascot--shy .cctv-body {
+  transform: rotate(-6deg) translateY(2px);
+}
+
+/* peek: show-password checked */
+.cctv-mascot--peek .cctv-eyes {
+  opacity: 1;
+}
+
+.cctv-mascot--peek .cctv-lids {
+  opacity: 0;
+}
+
+.cctv-mascot--peek .cctv-eye--l {
+  transform: scaleY(0.45);
+  transform-origin: 113px 61px;
+}
+
+.cctv-mascot--peek .cctv-pupil--l {
+  opacity: 0.35;
+}
+
+.cctv-mascot--peek .cctv-body {
+  transform: rotate(4deg);
+}
+
 .login-box h2 {
   font-size: 1.25rem;
   margin-bottom: 0.35rem;
@@ -527,16 +721,55 @@ body {
 .show-pass-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: flex-start;
+  gap: 0.55rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 1rem;
   cursor: pointer;
+  text-align: right;
+  user-select: none;
 }
 
-.show-pass-label input {
-  width: auto;
-  margin: 0;
+.show-pass-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  min-height: 18px !important;
+  max-width: 18px;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  position: relative;
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+}
+
+.show-pass-label input[type="checkbox"]::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+  margin-top: -2px;
+}
+
+.show-pass-label input[type="checkbox"]:checked {
+  background: var(--brand-red);
+  border-color: var(--brand-red);
+}
+
+.show-pass-label input[type="checkbox"]:checked::after {
+  transform: rotate(-45deg) scale(1);
 }
 
 .login-quick {
@@ -575,7 +808,8 @@ body {
   color: var(--text-muted);
 }
 
-.login-box input {
+.login-box input[type="text"],
+.login-box input[type="password"] {
   display: block;
   width: 100%;
   margin-top: 0.35rem;
@@ -796,7 +1030,8 @@ body {
   min-height: 48px;
 }
 
-.login-box input {
+.login-box input[type="text"],
+.login-box input[type="password"] {
   min-height: 48px;
   font-size: 16px; /* prevents iOS zoom on focus */
 }

@@ -1,22 +1,39 @@
 #!/usr/bin/env python3
-"""Portal API: host metrics + SQLite (auth audit + camera health log)."""
+"""Portal API: host metrics + SQLite (auth audit + camera health) + hourly ambiance snapshots."""
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, quote
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
 import json
 import os
+import random
 import sqlite3
 import threading
+import time
 
 PROC = "/host/proc"
 DB_PATH = Path(os.environ.get("PORTAL_DB", "/data/portal.db"))
+SNAP_DIR = Path(os.environ.get("PORTAL_SNAP_DIR", "/data/snapshots"))
 LOAD_RATIO_LIMIT = 0.5
 MEM_PERCENT_LIMIT = 30.0
 
+# Internal Frigate API (port 5000, no auth) — docker network hostnames
+FRIGATE_SOURCES = [
+    {"site": "cafe", "base": os.environ.get("FRIGATE_CAFE_URL", "http://frigate-cafe:5000")},
+    {"site": "center11", "base": os.environ.get("FRIGATE_CENTER11_URL", "http://frigate-center11:5000")},
+]
+
+SNAP_COUNT = int(os.environ.get("PORTAL_SNAP_COUNT", "8"))  # total tiles (split L/R)
+SNAP_INTERVAL_SEC = int(os.environ.get("PORTAL_SNAP_INTERVAL", str(3600)))
+SNAP_FETCH_TIMEOUT = 12
+
 _db_lock = threading.Lock()
+_snap_lock = threading.Lock()
+_snap_manifest: dict = {"updated_at": None, "tiles": []}
 
 
 def now_iso():
@@ -280,6 +297,123 @@ def list_camera_events(limit=50):
             conn.close()
 
 
+def http_get_json(url: str, timeout: int = 8):
+    req = Request(url, headers={"User-Agent": "portal-api/snapshots"})
+    with urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def http_get_bytes(url: str, timeout: int = SNAP_FETCH_TIMEOUT) -> bytes:
+    req = Request(url, headers={"User-Agent": "portal-api/snapshots"})
+    with urlopen(req, timeout=timeout) as resp:
+        data = resp.read()
+        ctype = (resp.headers.get("Content-Type") or "").lower()
+        if "jpeg" not in ctype and "jpg" not in ctype and not data.startswith(b"\xff\xd8"):
+            raise ValueError(f"not jpeg from {url}")
+        return data
+
+
+def list_live_cameras():
+    """Return [{site, camera, base}] for cameras with fps > 0."""
+    out = []
+    for src in FRIGATE_SOURCES:
+        try:
+            stats = http_get_json(f"{src['base']}/api/stats", timeout=6)
+        except Exception:
+            continue
+        cams = stats.get("cameras") or {}
+        for name, cam in cams.items():
+            if cam and float(cam.get("camera_fps") or 0) > 0:
+                out.append({"site": src["site"], "camera": name, "base": src["base"]})
+    return out
+
+
+def load_manifest_from_disk():
+    global _snap_manifest
+    path = SNAP_DIR / "manifest.json"
+    if not path.exists():
+        return
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("tiles"), list):
+            with _snap_lock:
+                _snap_manifest = data
+    except Exception:
+        pass
+
+
+def collect_snapshots():
+    """Pick random live cameras, save JPEGs, update manifest. Low load (~8 JPEGs/hour)."""
+    global _snap_manifest
+    SNAP_DIR.mkdir(parents=True, exist_ok=True)
+    candidates = list_live_cameras()
+    if not candidates:
+        return False
+
+    n = min(SNAP_COUNT, len(candidates))
+    picked = random.sample(candidates, n)
+    tiles = []
+    batch = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    half = (n + 1) // 2
+
+    for i, item in enumerate(picked):
+        side = "left" if i < half else "right"
+        cam = item["camera"]
+        site = item["site"]
+        fname = f"{batch}_{side}_{i}_{site}_{cam}.jpg".replace("/", "_")
+        url = f"{item['base']}/api/{quote(cam, safe='')}/latest.jpg"
+        try:
+            data = http_get_bytes(url)
+            (SNAP_DIR / fname).write_bytes(data)
+            tiles.append(
+                {
+                    "side": side,
+                    "site": site,
+                    "camera": cam,
+                    "file": fname,
+                    "url": f"/api/snapshots/file/{fname}",
+                }
+            )
+        except (URLError, HTTPError, TimeoutError, ValueError, OSError):
+            continue
+
+    if len(tiles) < 2:
+        return False
+
+    # Drop older files not in new set
+    keep = {t["file"] for t in tiles}
+    for p in SNAP_DIR.glob("*.jpg"):
+        if p.name not in keep:
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+    manifest = {"updated_at": now_iso(), "tiles": tiles, "interval_sec": SNAP_INTERVAL_SEC}
+    (SNAP_DIR / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    with _snap_lock:
+        _snap_manifest = manifest
+    return True
+
+
+def snapshot_worker():
+    # First run after short delay so Frigates are up
+    time.sleep(15)
+    while True:
+        try:
+            collect_snapshots()
+        except Exception:
+            pass
+        time.sleep(max(60, SNAP_INTERVAL_SEC))
+
+
+def get_manifest():
+    with _snap_lock:
+        return dict(_snap_manifest)
+
+
 def client_ip(handler: BaseHTTPRequestHandler) -> str:
     xff = handler.headers.get("X-Forwarded-For")
     if xff:
@@ -305,6 +439,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _file(self, code, data: bytes, content_type: str, cache: str = "public, max-age=300"):
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", cache)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -338,6 +480,27 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 self._json(200, {"events": list_camera_events(limit)})
             except Exception as exc:
+                self._json(500, {"error": str(exc)})
+            return
+
+        if path == "/api/snapshots":
+            self._json(200, get_manifest())
+            return
+
+        if path.startswith("/api/snapshots/file/"):
+            fname = path.split("/api/snapshots/file/", 1)[-1]
+            # safety: only basename jpg
+            fname = Path(fname).name
+            if not fname.endswith(".jpg") or ".." in fname:
+                self.send_error(400)
+                return
+            fpath = SNAP_DIR / fname
+            if not fpath.is_file():
+                self.send_error(404)
+                return
+            try:
+                self._file(200, fpath.read_bytes(), "image/jpeg")
+            except OSError as exc:
                 self._json(500, {"error": str(exc)})
             return
 
@@ -386,6 +549,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(500, {"error": str(exc)})
             return
 
+        # Manual refresh for admins/ops (optional)
+        if path == "/api/snapshots/refresh":
+            try:
+                ok = collect_snapshots()
+                self._json(200 if ok else 503, get_manifest() if ok else {"error": "no snapshots"})
+            except Exception as exc:
+                self._json(500, {"error": str(exc)})
+            return
+
         self.send_error(404)
 
     def log_message(self, fmt, *args):
@@ -394,4 +566,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    SNAP_DIR.mkdir(parents=True, exist_ok=True)
+    load_manifest_from_disk()
+    threading.Thread(target=snapshot_worker, name="snap-worker", daemon=True).start()
     HTTPServer(("0.0.0.0", 9090), Handler).serve_forever()

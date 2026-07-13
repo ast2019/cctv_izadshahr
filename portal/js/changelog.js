@@ -4,13 +4,45 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.5.2";
+const PORTAL_VERSION = "1.6.2";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-13",
+    version: "1.6.2",
+    items: [
+      "رفع پارالاکس موس کاشی‌های کناری",
+      "فونت و فایل‌های پرتال کاملاً محلی — بدون نیاز به اینترنت خارجی",
+      "تقویت ورود موبایل: تمدید کوکی قبل از باز کردن هر Frigate",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.6.1",
+    items: [
+      "پارالاکس موس برای کاشی‌های کناری صفحه اصلی",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.6.0",
+    items: [
+      "کاشی‌های زنده از snapshot تصادفی دوربین‌ها در دو طرف صفحه (فقط مانیتور واید)",
+      "به‌روزرسانی خودکار عکس‌ها هر یک ساعت بدون فشار اضافه روی سرور",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.5.3",
+    items: [
+      "کاراکتر دوربین CCTV در صفحه ورود (بستن چشم هنگام وارد کردن رمز)",
+      "اصلاح اندازه تیک نمایش رمز",
+    ],
+  },
   {
     date: "2026-07-13",
     version: "1.5.2",

@@ -309,6 +309,16 @@
     if (window.AdminPanel) await window.AdminPanel.refresh();
   }
 
+  function updateMascot() {
+    const mascot = document.getElementById("cctv-mascot");
+    const form = document.getElementById("login-form");
+    const show = document.getElementById("show-password");
+    if (!mascot || !form) return;
+    const passFocused = document.activeElement === form.password;
+    mascot.classList.toggle("cctv-mascot--shy", passFocused && !show?.checked);
+    mascot.classList.toggle("cctv-mascot--peek", !!show?.checked);
+  }
+
   function setupLogin() {
     const form = document.getElementById("login-form");
     const errEl = document.getElementById("login-error");
@@ -358,7 +368,15 @@
     document.getElementById("show-password")?.addEventListener("change", (e) => {
       const passInput = form?.password;
       if (passInput) passInput.type = e.target.checked ? "text" : "password";
+      updateMascot();
     });
+
+    const passInput = form?.password;
+    const userInput = form?.username;
+    passInput?.addEventListener("focus", updateMascot);
+    passInput?.addEventListener("blur", updateMascot);
+    userInput?.addEventListener("focus", updateMascot);
+    updateMascot();
 
     document.querySelectorAll("[data-quick-login]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -391,12 +409,36 @@
     });
   }
 
+  /** Before opening Frigate UI, refresh cookies if needed (esp. mobile). */
+  function bindPanelGuards() {
+    document.querySelectorAll("a.card[href]:not([href='#'])").forEach((el) => {
+      el.addEventListener("click", async (e) => {
+        if (!isLoggedIn()) return;
+        const href = el.getAttribute("href");
+        if (!href || href === "#") return;
+        e.preventDefault();
+        el.classList.add("card--busy");
+        try {
+          const ok = await ensureFrigateAuth();
+          if (!ok) {
+            showLoginModal();
+            return;
+          }
+          window.location.href = href;
+        } finally {
+          el.classList.remove("card--busy");
+        }
+      });
+    });
+  }
+
   async function renderAllCards() {
     const container = document.getElementById("cards");
     if (!container) return;
     updateIntro();
     container.innerHTML = SITES.map((s) => renderCard(s, "unknown")).join("");
     if (!isLoggedIn()) bindCardClicks();
+    else bindPanelGuards();
     await refreshCards();
   }
 
