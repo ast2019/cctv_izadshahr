@@ -2,13 +2,22 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="theme-color" content="#0f1115" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CCTV شهر" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="سیستم نظارت تصویری مجتمع گردشگری شهر · ایزدشهر" />
   <title>هتل ساحلی شهر — نظارت تصویری</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/main.css?v=1.2.3" />
+  <link rel="stylesheet" href="css/main.css?v=1.5.2" />
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -38,15 +47,14 @@
     <div class="login-box">
       <h2>ورود به سیستم</h2>
       <p class="login-hint">یک‌بار وارد شوید — همه بخش‌ها باز می‌شوند</p>
-      <p class="login-creds" data-auth-creds></p>
       <form id="login-form" autocomplete="off">
         <label>
           نام کاربری
-          <input type="text" name="username" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" required />
+          <input type="text" name="username" dir="ltr" autocomplete="username" autocapitalize="off" spellcheck="false" required />
         </label>
         <label>
           رمز عبور
-          <input type="password" name="password" dir="ltr" autocomplete="new-password" autocapitalize="off" spellcheck="false" required />
+          <input type="password" name="password" dir="ltr" autocomplete="current-password" autocapitalize="off" spellcheck="false" required />
         </label>
         <label class="show-pass-label">
           <input type="checkbox" id="show-password" />
@@ -60,18 +68,51 @@
   </div>
 
   <main class="main">
-    <section class="intro">
-      <p>ابتدا وارد شوید، سپس روی هر بخش بزنید.</p>
-    </section>
-
     <section id="system-status" class="system-status system-status--unknown" hidden aria-live="polite">
       <h2 class="system-status-title">وضعیت سرور اصلی</h2>
     </section>
 
+    <section class="camera-summary" id="camera-summary" aria-label="خلاصه دوربین‌ها">
+      <div class="summary-card summary-card--total">
+        <span class="summary-value" id="summary-total">—</span>
+        <span class="summary-label">کل دوربین‌ها</span>
+      </div>
+      <div class="summary-card summary-card--inactive">
+        <span class="summary-value" id="summary-inactive">—</span>
+        <span class="summary-label">غیرفعال</span>
+      </div>
+      <div class="summary-card summary-card--broken">
+        <span class="summary-value" id="summary-broken">—</span>
+        <span class="summary-label">خراب / قطع‌شده</span>
+      </div>
+    </section>
+
     <div class="cards" id="cards"></div>
 
+    <section id="admin-panel" class="admin-panel" hidden>
+      <h2 class="admin-panel-title">پنل مدیریت</h2>
+      <p class="admin-panel-hint">فقط برای ادمین — لاگ ورود و وضعیت دوربین‌های خراب (SQLite)</p>
+
+      <div class="admin-block">
+        <div class="admin-block-head">
+          <h3>لاگ ورود و خروج</h3>
+          <button type="button" class="btn-refresh" id="admin-refresh-btn">بروزرسانی</button>
+        </div>
+        <div id="admin-auth-log"></div>
+      </div>
+
+      <div class="admin-block">
+        <h3>دوربین‌های خراب / قطع‌شده (وضعیت فعلی)</h3>
+        <div id="admin-broken"></div>
+      </div>
+
+      <div class="admin-block">
+        <h3>تاریخچه رویداد دوربین‌ها</h3>
+        <div id="admin-cam-events"></div>
+      </div>
+    </section>
+
     <footer class="site-footer">
-      <p class="footer-note" data-auth-creds></p>
       <p class="footer-brand">مجتمع گردشگری شهر · ایزدشهر</p>
       <p class="footer-version">نسخه <span id="portal-version">—</span></p>
     </footer>
@@ -79,11 +120,19 @@
     <aside id="changelog" class="changelog" aria-label="تازه‌ها" hidden></aside>
   </main>
 
-  <script src="js/changelog.js?v=1.2.3"></script>
-  <script src="js/auth-config.js?v=1.2.3"></script>
-  <script src="js/sites.js?v=1.2.3"></script>
-  <script src="js/changelog-ui.js?v=1.2.3"></script>
-  <script src="js/load-monitor.js?v=1.2.3"></script>
-  <script src="js/app.js?v=1.2.3"></script>
+  <script src="js/changelog.js?v=1.5.2"></script>
+  <script src="js/auth-config.js?v=1.5.2"></script>
+  <script src="js/sites.js?v=1.5.2"></script>
+  <script src="js/changelog-ui.js?v=1.5.2"></script>
+  <script src="js/load-monitor.js?v=1.5.2"></script>
+  <script src="js/admin-panel.js?v=1.5.2"></script>
+  <script src="js/app.js?v=1.5.2"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

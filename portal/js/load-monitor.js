@@ -3,33 +3,39 @@
   const HOST_METRICS_PATH = "/api/host-metrics/";
   const POLL_MS = 30000;
 
+  function num(v) {
+    const n = typeof v === "number" ? v : parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  /** Sum CPU% of Frigate container processes (PIDs). Values from API are strings. */
   function parseFrigateCpu(stats) {
     if (!stats?.cpu_usages || typeof stats.cpu_usages !== "object") return null;
     let total = 0;
+    let seen = false;
     for (const [key, val] of Object.entries(stats.cpu_usages)) {
       if (!/^\d+$/.test(key)) continue;
-      if (val && typeof val === "object" && typeof val.cpu === "number") {
-        total += val.cpu;
-      } else if (typeof val === "number") {
-        total += val;
-      }
+      if (!val || typeof val !== "object") continue;
+      total += num(val.cpu);
+      seen = true;
     }
+    if (!seen) return null;
     return Math.round(total * 10) / 10;
   }
 
-  function parseFrigateMemMb(stats) {
-    if (stats?.service?.mem_usage_mb) return Math.round(stats.service.mem_usage_mb);
-    if (stats?.mem_usages && typeof stats.mem_usages === "object") {
-      let total = 0;
-      for (const [key, val] of Object.entries(stats.mem_usages)) {
-        if (!/^\d+$/.test(key)) continue;
-        if (val && typeof val === "object" && typeof val.mem === "number") {
-          total += val.mem;
-        }
-      }
-      if (total > 0) return Math.round(total);
+  /** Sum process memory % (of host), as reported by Frigate. */
+  function parseFrigateMemPct(stats) {
+    if (!stats?.cpu_usages || typeof stats.cpu_usages !== "object") return null;
+    let total = 0;
+    let seen = false;
+    for (const [key, val] of Object.entries(stats.cpu_usages)) {
+      if (!/^\d+$/.test(key)) continue;
+      if (!val || typeof val !== "object") continue;
+      total += num(val.mem);
+      seen = true;
     }
-    return null;
+    if (!seen) return null;
+    return Math.round(total * 10) / 10;
   }
 
   async function fetchHostMetrics() {
@@ -69,7 +75,7 @@
     }
     if (host.memory_pressure) {
       alerts.push(
-        `RAM: ${host.memory.used_percent}% مصرف (حد مجاز ${host.memory_limit_percent}%) — افزودن Frigate/دوربین توصیه نمی‌شود`
+        `RAM: ${host.memory.used_percent}% مصرف (حد مجاز ${host.memory_limit_percent}%) — افزودن دوربین توصیه نمی‌شود`
       );
     }
 
@@ -101,14 +107,15 @@
     if (!el) return;
 
     const cpu = parseFrigateCpu(stats);
-    const mem = parseFrigateMemMb(stats);
+    const mem = parseFrigateMemPct(stats);
     if (cpu === null && mem === null) {
       el.textContent = "";
       return;
     }
     const parts = [];
-    if (cpu !== null) parts.push(`CPU فرایند: ${cpu}%`);
-    if (mem !== null) parts.push(`RAM: ${mem} MB`);
+    // CPU% can exceed 100 on multi-core (same as docker stats)
+    if (cpu !== null) parts.push(`CPU: ${cpu}%`);
+    if (mem !== null) parts.push(`RAM: ${mem}%`);
     el.textContent = parts.join(" · ");
   }
 
@@ -131,6 +138,6 @@
     start,
     renderFrigateLoad,
     parseFrigateCpu,
-    parseFrigateMemMb,
+    parseFrigateMemPct,
   };
 })();

@@ -4,6 +4,9 @@
 # Media (recordings, snapshots, clips)
 media/
 
+# Portal SQLite
+data/
+
 # Frigate runtime data written into the config dirs
 config/**/frigate.db*
 config/**/model_cache/

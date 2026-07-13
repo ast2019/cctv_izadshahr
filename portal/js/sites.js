@@ -12,7 +12,7 @@ const SITES = [
     enabled: true,
     healthPath: "/health/cafe/",
     apiPath: "/cafe/api/",
-    cssClass: "card--cafe",
+    cssClass: "card--active",
   },
   {
     id: "center11",
@@ -26,7 +26,7 @@ const SITES = [
     enabled: true,
     healthPath: "/health/center11/",
     apiPath: "/center11/api/",
-    cssClass: "card--center11",
+    cssClass: "card--active",
   },
   {
     id: "center22",
@@ -43,3 +43,15 @@ const SITES = [
     cssClass: "card--center22",
   },
 ];
+
+/**
+ * Inventory overview (docs/CAMERAS.md).
+ * total = همه دوربین‌های شناخته‌شده
+ * inactive = هنوز فعال نشده / planned
+ * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است (مثل cam_14, cam_16)
+ */
+const CAMERA_INVENTORY = {
+  total: 71,
+  inactive: 55,
+  broken: 2,
+};

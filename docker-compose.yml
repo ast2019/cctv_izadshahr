@@ -59,13 +59,17 @@ services:
       - "8561:8555/tcp"
       - "8561:8555/udp"
 
+  # Host metrics + SQLite audit log (login/logout)
   portal-metrics:
     image: python:3.12-alpine
     container_name: portal-metrics
     restart: unless-stopped
-    command: ["python3", "/app/metrics-server.py"]
+    command: ["python3", "/app/portal-api.py"]
+    environment:
+      PORTAL_DB: /data/portal.db
     volumes:
-      - ./portal/metrics-server.py:/app/metrics-server.py:ro
+      - ./portal/portal-api.py:/app/portal-api.py:ro
+      - ./data/portal:/data
       - /proc:/host/proc:ro
     expose:
       - "9090"
@@ -102,3 +106,4 @@ services:
     depends_on:
       - frigate-cafe
       - frigate-center11
+      - portal-metrics

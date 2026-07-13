@@ -8,7 +8,7 @@ detect:
 record:
   enabled: true
   retain:
-    days: 3
+    days: 1
     mode: motion
 
 snapshots:

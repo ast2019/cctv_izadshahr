@@ -1,7 +1,10 @@
 (function () {
   const SESSION_KEY = "cctv_portal_session";
+  const SESSION_DAYS = 2;
+  const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
+  const CSRF_HEADER = { "X-CSRF-TOKEN": "1" };
 
-  /** Persian/Arabic digits → ASCII (common login typo on FA keyboard) */
+  /** Persian/Arabic digits → ASCII */
   function normalizeLogin(value) {
     if (!value) return "";
     let s = value.trim().normalize("NFKC");
@@ -32,7 +35,55 @@
     });
   }
 
-  /** Frigate returns 401 without auth — service is still up */
+  function getSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const sess = JSON.parse(raw);
+      if (!sess?.at || Date.now() - sess.at > SESSION_MS) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return sess;
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+  }
+
+  function isLoggedIn() {
+    return !!getSession();
+  }
+
+  function saveSession(user) {
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ user, at: Date.now() })
+    );
+  }
+
+  function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  async function logAuthEvent(event, username, success = true, detail = null) {
+    try {
+      await fetch("/api/audit/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ event, username, success, detail }),
+      });
+    } catch {
+      /* ignore audit failures */
+    }
+  }
+
+  function updateIntro() {
+    /* intro section removed */
+  }
+
   async function checkHealth(site) {
     try {
       const res = await fetch(site.healthPath, { method: "GET", cache: "no-store" });
@@ -81,6 +132,18 @@
     `;
   }
 
+  function renderCameraSummary(liveBroken = 0) {
+    const inv = typeof CAMERA_INVENTORY !== "undefined" ? CAMERA_INVENTORY : null;
+    const totalEl = document.getElementById("summary-total");
+    const inactiveEl = document.getElementById("summary-inactive");
+    const brokenEl = document.getElementById("summary-broken");
+    if (!inv || !totalEl) return;
+
+    totalEl.textContent = String(inv.total);
+    inactiveEl.textContent = String(inv.inactive);
+    brokenEl.textContent = String(Math.max(inv.broken, liveBroken));
+  }
+
   function renderCard(site, health) {
     const disabled = !site.enabled;
     const href = disabled ? "#" : panelUrl(site);
@@ -89,7 +152,6 @@
     return `
       <a href="${needsLogin ? "#" : href}" class="card ${site.cssClass}${disabled ? " card--disabled" : ""}"
          ${needsLogin ? `data-login-site="${site.id}"` : ""}
-         ${disabled || needsLogin ? "" : ""}
          aria-label="ورود به ${site.title}">
         <div class="card-top">
           <div class="card-icon" aria-hidden="true">${site.icon}</div>
@@ -119,10 +181,6 @@
     `;
   }
 
-  function isLoggedIn() {
-    return !!sessionStorage.getItem(SESSION_KEY);
-  }
-
   function showLoginModal() {
     document.getElementById("login-modal")?.classList.add("open");
   }
@@ -130,9 +188,6 @@
   function hideLoginModal() {
     document.getElementById("login-modal")?.classList.remove("open");
   }
-
-  // Frigate rejects browser (Origin-bearing) writes without this header
-  const CSRF_HEADER = { "X-CSRF-TOKEN": "1" };
 
   async function clearSiteSession(site) {
     try {
@@ -147,19 +202,13 @@
     }
   }
 
-  function renderAuthHints() {
-    if (typeof PORTAL_AUTH === "undefined") return;
-    const creds = `مشاهده: <code dir="ltr">${PORTAL_AUTH.viewer.user}</code> / <code dir="ltr">${PORTAL_AUTH.viewer.pass}</code> — مدیریت: <code dir="ltr">${PORTAL_AUTH.admin.user}</code> / <code dir="ltr">${PORTAL_AUTH.admin.pass}</code>`;
-    document.querySelectorAll("[data-auth-creds]").forEach((el) => {
-      el.innerHTML = creds;
-    });
+  function renderQuickLogin() {
     const quick = document.getElementById("login-quick");
-    if (quick) {
-      quick.innerHTML = `
-        <button type="button" class="btn-quick" data-quick-login="viewer">ورود سریع مشاهده</button>
-        <button type="button" class="btn-quick btn-quick--admin" data-quick-login="admin">ورود سریع مدیریت</button>
-      `;
-    }
+    if (!quick || typeof PORTAL_AUTH === "undefined") return;
+    quick.innerHTML = `
+      <button type="button" class="btn-quick" data-quick-login="viewer">ورود ویور</button>
+      <button type="button" class="btn-quick btn-quick--admin" data-quick-login="admin">ورود ادمین</button>
+    `;
   }
 
   async function loginSite(site, username, password) {
@@ -193,15 +242,71 @@
     const failed = results.filter((r) => !r.ok);
     if (failed.length > 0) {
       const authFail = failed.every((f) => f.status === 401);
+      await logAuthEvent(
+        "login_failed",
+        username,
+        false,
+        authFail ? "bad credentials" : failed.map((f) => f.site.id).join(",")
+      );
       if (authFail) {
-        throw new Error(
-          "رمز یا نام کاربری اشتباه است. از دکمه «ورود سریع» استفاده کنید یا Ctrl+Shift+R بزنید."
-        );
+        throw new Error("نام کاربری یا رمز عبور اشتباه است.");
       }
       throw new Error(`ورود ناموفق: ${failed.map((f) => f.site.title).join("، ")}`);
     }
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user: username, at: Date.now() }));
+    saveSession(username);
+    await logAuthEvent("login", username, true);
     return true;
+  }
+
+  /** Check the Frigate cookie is really valid on this device (mobile browsers
+   *  drop cookies while the 2-day portal session in localStorage survives). */
+  async function verifySiteAuth(site) {
+    try {
+      const res = await fetch(`${site.apiPath}profile`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function ensureFrigateAuth() {
+    const sess = getSession();
+    if (!sess) return false;
+
+    const enabled = SITES.filter((s) => s.enabled);
+    const checks = await Promise.all(enabled.map(verifySiteAuth));
+    if (checks.every(Boolean)) return true;
+
+    // Cookie missing/expired on this device — silent re-login with known account
+    if (typeof PORTAL_AUTH !== "undefined") {
+      const account = Object.values(PORTAL_AUTH).find((a) => a.user === sess.user);
+      if (account) {
+        try {
+          await loginAll(account.user, account.pass);
+          return true;
+        } catch {
+          /* fall through */
+        }
+      }
+    }
+
+    clearSession();
+    return false;
+  }
+
+  async function afterLogin(user) {
+    hideLoginModal();
+    const userBar = document.getElementById("user-bar");
+    if (userBar) {
+      userBar.hidden = false;
+      userBar.querySelector(".user-name").textContent = user;
+    }
+    updateIntro();
+    await renderAllCards();
+    if (window.AdminPanel) await window.AdminPanel.refresh();
   }
 
   function setupLogin() {
@@ -210,12 +315,10 @@
     const userBar = document.getElementById("user-bar");
     const logoutBtn = document.getElementById("logout-btn");
 
-    if (isLoggedIn()) {
-      const sess = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "{}");
-      if (userBar) {
-        userBar.hidden = false;
-        userBar.querySelector(".user-name").textContent = sess.user || "";
-      }
+    const sess = getSession();
+    if (sess && userBar) {
+      userBar.hidden = false;
+      userBar.querySelector(".user-name").textContent = sess.user || "";
     }
 
     form?.addEventListener("submit", async (e) => {
@@ -227,12 +330,7 @@
       btn.disabled = true;
       try {
         await loginAll(user, pass);
-        hideLoginModal();
-        if (userBar) {
-          userBar.hidden = false;
-          userBar.querySelector(".user-name").textContent = user;
-        }
-        await renderAllCards();
+        await afterLogin(user);
       } catch (err) {
         errEl.textContent = err.message || "خطا در ورود";
       } finally {
@@ -241,11 +339,16 @@
     });
 
     logoutBtn?.addEventListener("click", async () => {
+      const sess = getSession();
+      const user = sess?.user || "";
       for (const site of SITES.filter((s) => s.enabled)) {
         await clearSiteSession(site);
       }
-      sessionStorage.removeItem(SESSION_KEY);
+      await logAuthEvent("logout", user, true);
+      clearSession();
       if (userBar) userBar.hidden = true;
+      updateIntro();
+      if (window.AdminPanel) window.AdminPanel.hide();
       showLoginModal();
       await renderAllCards();
     });
@@ -260,8 +363,7 @@
     document.querySelectorAll("[data-quick-login]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!form || typeof PORTAL_AUTH === "undefined") return;
-        const role = btn.dataset.quickLogin;
-        const account = PORTAL_AUTH[role];
+        const account = PORTAL_AUTH[btn.dataset.quickLogin];
         if (!account) return;
         errEl.textContent = "";
         form.username.value = account.user;
@@ -270,12 +372,7 @@
         submit.disabled = true;
         try {
           await loginAll(account.user, account.pass);
-          hideLoginModal();
-          if (userBar) {
-            userBar.hidden = false;
-            userBar.querySelector(".user-name").textContent = account.user;
-          }
-          await renderAllCards();
+          await afterLogin(account.user);
         } catch (err) {
           errEl.textContent = err.message || "خطا در ورود";
         } finally {
@@ -297,20 +394,51 @@
   async function renderAllCards() {
     const container = document.getElementById("cards");
     if (!container) return;
+    updateIntro();
     container.innerHTML = SITES.map((s) => renderCard(s, "unknown")).join("");
     if (!isLoggedIn()) bindCardClicks();
     await refreshCards();
+  }
+
+  async function reportCameraStatuses(reports) {
+    if (!reports.length) return;
+    try {
+      await fetch("/api/cameras/report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ cameras: reports }),
+      });
+    } catch {
+      /* ignore */
+    }
   }
 
   async function refreshCards() {
     const container = document.getElementById("cards");
     if (!container) return;
 
+    let liveBroken = 0;
+    const cameraReports = [];
+
     await Promise.all(
       SITES.map(async (site) => {
         if (!site.enabled) return;
         const health = await checkHealth(site);
         const stats = isLoggedIn() ? await fetchStats(site) : null;
+
+        if (stats?.cameras) {
+          for (const [name, cam] of Object.entries(stats.cameras)) {
+            const ok = cam && cam.camera_fps > 0;
+            if (!ok) liveBroken += 1;
+            cameraReports.push({
+              camera: name,
+              site: site.id,
+              status: ok ? "ok" : "broken",
+              detail: ok ? null : `fps=${cam?.camera_fps ?? 0}`,
+            });
+          }
+        }
 
         const statusEl = container.querySelector(`[data-site="${site.id}"]`);
         if (statusEl) {
@@ -325,13 +453,36 @@
         }
       })
     );
+
+    if (isLoggedIn() && cameraReports.length) {
+      await reportCameraStatuses(cameraReports);
+    }
+
+    renderCameraSummary(liveBroken);
     if (window.LoadMonitor) await window.LoadMonitor.refreshHost();
+    if (window.AdminPanel) await window.AdminPanel.refresh();
   }
 
   async function init() {
-    renderAuthHints();
+    renderQuickLogin();
+    updateIntro();
+    renderCameraSummary(0);
     setupLogin();
+    document.getElementById("admin-refresh-btn")?.addEventListener("click", () => {
+      window.AdminPanel?.refresh();
+    });
     window.LoadMonitor?.start();
+
+    if (isLoggedIn()) {
+      const ok = await ensureFrigateAuth();
+      if (!ok) {
+        const userBar = document.getElementById("user-bar");
+        if (userBar) userBar.hidden = true;
+        updateIntro();
+        showLoginModal();
+      }
+    }
+
     await renderAllCards();
     setInterval(async () => {
       if (isLoggedIn()) await refreshCards();
