@@ -39,7 +39,7 @@ const SITES = [
     cameraCount: 0,
     enabled: false,
     healthPath: "/health/center22/",
-    apiPath: "/api/center22/",
+    apiPath: "/center22/api/",
     cssClass: "card--center22",
   },
 ];

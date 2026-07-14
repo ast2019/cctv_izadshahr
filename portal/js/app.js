@@ -1,6 +1,6 @@
 (function () {
   const SESSION_KEY = "cctv_portal_session";
-  const SESSION_DAYS = 2;
+  const SESSION_DAYS = 30;
   const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
   const CSRF_HEADER = { "X-CSRF-TOKEN": "1" };
 
@@ -93,12 +93,18 @@
     }
   }
 
-  async function fetchStats(site) {
+  async function fetchStats(site, retried = false) {
     try {
       const res = await fetch(`${site.apiPath}stats`, {
         cache: "no-store",
         credentials: "include",
       });
+      // Frigate cookie expired mid-session — silently re-login once and retry
+      if (res.status === 401 && !retried && isLoggedIn()) {
+        const state = await ensureSiteAuth(site);
+        if (state === true) return fetchStats(site, true);
+        return null;
+      }
       if (!res.ok) return null;
       return await res.json();
     } catch {
@@ -151,7 +157,7 @@
 
     return `
       <a href="${needsLogin ? "#" : href}" class="card ${site.cssClass}${disabled ? " card--disabled" : ""}"
-         ${needsLogin ? `data-login-site="${site.id}"` : ""}
+         ${needsLogin ? `data-login-site="${site.id}"` : `data-panel-site="${site.id}"`}
          aria-label="ورود به ${site.title}">
         <div class="card-top">
           <div class="card-icon" aria-hidden="true">${site.icon}</div>
@@ -212,27 +218,33 @@
   }
 
   async function loginSite(site, username, password) {
-    await clearSiteSession(site);
-    const res = await fetch(`${site.apiPath}login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...CSRF_HEADER },
-      credentials: "include",
-      cache: "no-store",
-      body: JSON.stringify({ user: username, password }),
-    });
-    if (!res.ok) {
-      let msg = "";
-      try {
-        const data = await res.json();
-        msg = data.message || "";
-      } catch {
-        /* ignore */
+    try {
+      const res = await fetch(`${site.apiPath}login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...CSRF_HEADER },
+        credentials: "include",
+        cache: "no-store",
+        body: JSON.stringify({ user: username, password }),
+      });
+      if (!res.ok) {
+        let msg = "";
+        try {
+          const data = await res.json();
+          msg = data.message || "";
+        } catch {
+          /* ignore */
+        }
+        return { site, ok: false, status: res.status, msg };
       }
-      return { site, ok: false, status: res.status, msg };
+      return { site, ok: true, status: res.status, msg: "" };
+    } catch {
+      // Network error (site down / restarting) — not a credential problem
+      return { site, ok: false, status: 0, msg: "network" };
     }
-    return { site, ok: true, status: res.status, msg: "" };
   }
 
+  /** Login to every enabled site. Succeeds if at least one site accepts —
+   *  one offline Frigate must not lock the user out of the others. */
   async function loginAll(username, password) {
     const enabled = SITES.filter((s) => s.enabled);
     const results = [];
@@ -240,7 +252,7 @@
       results.push(await loginSite(site, username, password));
     }
     const failed = results.filter((r) => !r.ok);
-    if (failed.length > 0) {
+    if (failed.length === results.length) {
       const authFail = failed.every((f) => f.status === 401);
       await logAuthEvent(
         "login_failed",
@@ -254,12 +266,17 @@
       throw new Error(`ورود ناموفق: ${failed.map((f) => f.site.title).join("، ")}`);
     }
     saveSession(username);
-    await logAuthEvent("login", username, true);
+    await logAuthEvent(
+      "login",
+      username,
+      true,
+      failed.length ? `degraded: ${failed.map((f) => f.site.id).join(",")}` : null
+    );
     return true;
   }
 
-  /** Check the Frigate cookie is really valid on this device (mobile browsers
-   *  drop cookies while the 2-day portal session in localStorage survives). */
+  /** Check the Frigate cookie is really valid on this device (browsers may
+   *  drop cookies while the portal session in localStorage survives). */
   async function verifySiteAuth(site) {
     try {
       const res = await fetch(`${site.apiPath}profile`, {
@@ -272,29 +289,57 @@
     }
   }
 
-  async function ensureFrigateAuth() {
+  /** Make sure ONE site's Frigate cookie is valid; silently re-login if not.
+   *  Returns true (cookie ok), false (site unreachable / unknown account —
+   *  keep portal session, Frigate will ask itself if really needed),
+   *  or "unauthorized" (stored credentials rejected — real re-login needed). */
+  async function ensureSiteAuth(site) {
+    if (await verifySiteAuth(site)) return true;
+
     const sess = getSession();
-    if (!sess) return false;
+    if (!sess) return "unauthorized";
+    const account =
+      typeof PORTAL_AUTH !== "undefined"
+        ? Object.values(PORTAL_AUTH).find((a) => a.user === sess.user)
+        : null;
+    if (!account) return false;
 
-    const enabled = SITES.filter((s) => s.enabled);
-    const checks = await Promise.all(enabled.map(verifySiteAuth));
-    if (checks.every(Boolean)) return true;
+    const res = await loginSite(site, account.user, account.pass);
+    if (res.status === 401) return "unauthorized";
+    return res.ok;
+  }
 
-    // Cookie missing/expired on this device — silent re-login with known account
-    if (typeof PORTAL_AUTH !== "undefined") {
-      const account = Object.values(PORTAL_AUTH).find((a) => a.user === sess.user);
-      if (account) {
-        try {
-          await loginAll(account.user, account.pass);
-          return true;
-        } catch {
-          /* fall through */
-        }
-      }
-    }
+  /** Resolve with `fallback` if `promise` takes longer than `ms` —
+   *  a slow Frigate must never block opening its panel. */
+  function withTimeout(promise, ms, fallback) {
+    return Promise.race([
+      promise,
+      new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+    ]);
+  }
 
+  function forceRelogin() {
     clearSession();
-    return false;
+    const userBar = document.getElementById("user-bar");
+    if (userBar) userBar.hidden = true;
+    updateIntro();
+    if (window.AdminPanel) window.AdminPanel.hide();
+    showLoginModal();
+  }
+
+  /** Background refresh of all sites' cookies. Logs the user out ONLY when
+   *  the stored credentials are explicitly rejected (401) — never because a
+   *  Frigate instance is offline or the network hiccuped. */
+  async function refreshAllSiteAuth() {
+    if (!isLoggedIn()) return false;
+    const enabled = SITES.filter((s) => s.enabled);
+    const states = await Promise.all(enabled.map((s) => ensureSiteAuth(s)));
+    if (states.some((s) => s === "unauthorized")) {
+      forceRelogin();
+      await renderAllCards();
+      return false;
+    }
+    return true;
   }
 
   async function afterLogin(user) {
@@ -409,19 +454,25 @@
     });
   }
 
-  /** Before opening Frigate UI, refresh cookies if needed (esp. mobile). */
+  /** Before opening Frigate UI, refresh THAT site's cookie if needed.
+   *  Best-effort: navigation always proceeds unless credentials are
+   *  explicitly rejected — never blocked by another (offline) site. */
   function bindPanelGuards() {
     document.querySelectorAll("a.card[href]:not([href='#'])").forEach((el) => {
       el.addEventListener("click", async (e) => {
         if (!isLoggedIn()) return;
         const href = el.getAttribute("href");
         if (!href || href === "#") return;
+        const site = SITES.find((s) => s.id === el.dataset.panelSite);
         e.preventDefault();
         el.classList.add("card--busy");
         try {
-          const ok = await ensureFrigateAuth();
-          if (!ok) {
-            showLoginModal();
+          const state = site
+            ? await withTimeout(ensureSiteAuth(site), 4000, true)
+            : true;
+          if (state === "unauthorized") {
+            forceRelogin();
+            await renderAllCards();
             return;
           }
           window.location.href = href;
@@ -516,15 +567,9 @@
     window.LoadMonitor?.start();
 
     if (isLoggedIn()) {
-      const ok = await ensureFrigateAuth();
-      if (!ok) {
-        const userBar = document.getElementById("user-bar");
-        if (userBar) userBar.hidden = true;
-        updateIntro();
-        showLoginModal();
-      } else {
-        hideLoginModal();
-      }
+      // Non-blocking: refresh cookies in background; only a real 401
+      // (changed password) forces the login modal.
+      refreshAllSiteAuth();
     } else {
       showLoginModal();
     }

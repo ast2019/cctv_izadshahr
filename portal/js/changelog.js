@@ -4,13 +4,25 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.6";
+const PORTAL_VERSION = "1.6.7";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-16",
+    version: "1.6.7",
+    items: [
+      "رفع درخواست دوباره رمز هنگام ورود به پنل هر Frigate (کروم / مک‌بوک)",
+      "رفع بیرون انداختن مکرر از پرتال — خروج فقط با رمز اشتباه یا دکمه خروج",
+      "بازگشت نمایش تعداد دوربین‌های فعال روی کارت‌ها (ورود خودکار دوباره هنگام انقضای نشست)",
+      "نشست Frigate از ۱ روز به ۳۰ روز افزایش یافت — نیاز به کانفیگ جدید و ری‌استارت",
+      "اگر یک بخش در دسترس نباشد، ورود و استفاده از بخش‌های دیگر مسدود نمی‌شود",
+      "افزوده‌شدن بخش‌های جدید: رستوران، پذیرش، ساحل، ویلا، محوطه، پارکینگ",
+    ],
+  },
   {
     date: "2026-07-13",
     version: "1.6.6",
