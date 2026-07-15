@@ -14,8 +14,8 @@
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/fonts.css?v=1.6.2" />
-  <link rel="stylesheet" href="css/main.css?v=1.6.2" />
+  <link rel="stylesheet" href="css/fonts.css?v=1.6.6" />
+  <link rel="stylesheet" href="css/main.css?v=1.6.6" />
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -99,25 +99,6 @@
   </div>
 
   <main class="main">
-    <section id="system-status" class="system-status system-status--unknown" hidden aria-live="polite">
-      <h2 class="system-status-title">وضعیت سرور اصلی</h2>
-    </section>
-
-    <section class="camera-summary" id="camera-summary" aria-label="خلاصه دوربین‌ها">
-      <div class="summary-card summary-card--total">
-        <span class="summary-value" id="summary-total">—</span>
-        <span class="summary-label">کل دوربین‌ها</span>
-      </div>
-      <div class="summary-card summary-card--inactive">
-        <span class="summary-value" id="summary-inactive">—</span>
-        <span class="summary-label">غیرفعال</span>
-      </div>
-      <div class="summary-card summary-card--broken">
-        <span class="summary-value" id="summary-broken">—</span>
-        <span class="summary-label">خراب / قطع‌شده</span>
-      </div>
-    </section>
-
     <div class="cards" id="cards"></div>
 
     <section id="admin-panel" class="admin-panel" hidden>
@@ -143,22 +124,51 @@
       </div>
     </section>
 
+    <section id="status-overview" class="status-overview status-overview--unknown" aria-label="وضعیت کلی" aria-live="polite">
+      <h2 class="status-overview-title">وضعیت کلی سیستم</h2>
+      <div class="status-overview-grid">
+        <div class="status-metric status-metric--total">
+          <span class="status-metric-value" id="summary-total">—</span>
+          <span class="status-metric-label">کل دوربین‌ها</span>
+        </div>
+        <div class="status-metric status-metric--inactive">
+          <span class="status-metric-value" id="summary-inactive">—</span>
+          <span class="status-metric-label">غیرفعال</span>
+        </div>
+        <div class="status-metric status-metric--broken">
+          <span class="status-metric-value" id="summary-broken">—</span>
+          <span class="status-metric-label">خراب / قطع</span>
+        </div>
+        <div class="status-metric status-metric--load">
+          <span class="status-metric-value" id="host-load-value">—</span>
+          <span class="status-metric-label">Load سرور</span>
+          <span class="status-metric-hint" id="host-load-hint"></span>
+        </div>
+        <div class="status-metric status-metric--ram">
+          <span class="status-metric-value" id="host-ram-value">—</span>
+          <span class="status-metric-label">RAM</span>
+          <span class="status-metric-hint" id="host-ram-hint"></span>
+        </div>
+      </div>
+      <div id="status-overview-msg" class="status-overview-msg"></div>
+    </section>
+
+    <aside id="changelog" class="changelog" aria-label="تازه‌ها" hidden></aside>
+
     <footer class="site-footer">
       <p class="footer-brand">مجتمع گردشگری شهر · ایزدشهر</p>
       <p class="footer-version">نسخه <span id="portal-version">—</span></p>
     </footer>
-
-    <aside id="changelog" class="changelog" aria-label="تازه‌ها" hidden></aside>
   </main>
 
-  <script src="js/changelog.js?v=1.6.2"></script>
-  <script src="js/auth-config.js?v=1.6.2"></script>
-  <script src="js/sites.js?v=1.6.2"></script>
-  <script src="js/changelog-ui.js?v=1.6.2"></script>
-  <script src="js/load-monitor.js?v=1.6.2"></script>
-  <script src="js/admin-panel.js?v=1.6.2"></script>
-  <script src="js/ambiance.js?v=1.6.2"></script>
-  <script src="js/app.js?v=1.6.2"></script>
+  <script src="js/changelog.js?v=1.6.6"></script>
+  <script src="js/auth-config.js?v=1.6.6"></script>
+  <script src="js/sites.js?v=1.6.6"></script>
+  <script src="js/changelog-ui.js?v=1.6.6"></script>
+  <script src="js/load-monitor.js?v=1.6.6"></script>
+  <script src="js/admin-panel.js?v=1.6.6"></script>
+  <script src="js/ambiance.js?v=1.6.6"></script>
+  <script src="js/app.js?v=1.6.6"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

@@ -85,9 +85,9 @@
       document.querySelectorAll(".ambiance-tile").forEach((tile) => {
         const depth = parseFloat(tile.dataset.depth || "0.7");
         const side = tile.closest(".ambiance-rail--left") ? -1 : 1;
-        const mx = mouseX * depth * 42 * side;
-        const my = mouseY * depth * 22 + scrollY * depth * 0.05;
-        const rot = mouseX * depth * 2.4 * side;
+        const mx = mouseX * depth * 22 * side;
+        const my = mouseY * depth * 12 + scrollY * depth * 0.04;
+        const rot = mouseX * depth * 1.2 * side;
         tile.style.transform = `translate3d(${mx.toFixed(1)}px, ${my.toFixed(1)}px, 0) rotate(${rot.toFixed(2)}deg)`;
       });
 

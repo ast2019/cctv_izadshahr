@@ -8,7 +8,6 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  /** Sum CPU% of Frigate container processes (PIDs). Values from API are strings. */
   function parseFrigateCpu(stats) {
     if (!stats?.cpu_usages || typeof stats.cpu_usages !== "object") return null;
     let total = 0;
@@ -23,7 +22,6 @@
     return Math.round(total * 10) / 10;
   }
 
-  /** Sum process memory % (of host), as reported by Frigate. */
   function parseFrigateMemPct(stats) {
     if (!stats?.cpu_usages || typeof stats.cpu_usages !== "object") return null;
     let total = 0;
@@ -48,58 +46,112 @@
     }
   }
 
-  function statusClass(host) {
-    if (!host) return "system-status--unknown";
-    if (!host.stable) return "system-status--danger";
-    if (host.cpu_pressure || host.memory_pressure) return "system-status--warn";
-    return "system-status--ok";
+  const SEV_ORDER = { ok: 0, warn: 1, danger: 2 };
+
+  /** CPU severity from load/cores ratio.
+   *  ratio < warnRatio → ok · warnRatio..dangerRatio → warn · ≥ dangerRatio → danger */
+  function cpuSeverity(host) {
+    const cores = num(host.cpu_cores) || 1;
+    const ratio = num(host.load_average["1m"]) / cores;
+    const warnRatio = host.load_limit ? host.load_limit / cores : 0.5;
+    const dangerRatio = 1.0;
+    if (ratio >= dangerRatio) return "danger";
+    if (ratio >= warnRatio) return "warn";
+    return "ok";
+  }
+
+  /** RAM severity: < limit → ok · limit..2×limit → warn · ≥ 2×limit → danger */
+  function ramSeverity(host) {
+    const used = num(host.memory.used_percent);
+    const limit = num(host.memory_limit_percent) || 30;
+    const dangerLimit = limit * 2;
+    if (used >= dangerLimit) return "danger";
+    if (used >= limit) return "warn";
+    return "ok";
+  }
+
+  function worst(a, b) {
+    return SEV_ORDER[a] >= SEV_ORDER[b] ? a : b;
+  }
+
+  function applyMetricSeverity(el, sev) {
+    if (!el) return;
+    el.classList.remove("is-ok", "is-warn", "is-danger");
+    el.classList.add(`is-${sev}`);
   }
 
   function renderHostPanel(host) {
-    const el = document.getElementById("system-status");
+    const el = document.getElementById("status-overview");
+    const loadVal = document.getElementById("host-load-value");
+    const loadHint = document.getElementById("host-load-hint");
+    const loadMetric = loadVal ? loadVal.closest(".status-metric") : null;
+    const ramVal = document.getElementById("host-ram-value");
+    const ramHint = document.getElementById("host-ram-hint");
+    const ramMetric = ramVal ? ramVal.closest(".status-metric") : null;
+    const msg = document.getElementById("status-overview-msg");
     if (!el) return;
 
     if (!host) {
-      el.hidden = true;
+      el.className = "status-overview status-overview--unknown";
+      if (loadVal) loadVal.textContent = "—";
+      if (ramVal) ramVal.textContent = "—";
+      applyMetricSeverity(loadMetric, "ok");
+      applyMetricSeverity(ramMetric, "ok");
+      if (msg) msg.innerHTML = "";
       return;
     }
 
-    el.hidden = false;
-    el.className = `system-status ${statusClass(host)}`;
+    const cpuSev = cpuSeverity(host);
+    const ramSev = ramSeverity(host);
+    const overall = worst(cpuSev, ramSev);
+    el.className = `status-overview status-overview--${overall}`;
 
+    applyMetricSeverity(loadMetric, cpuSev);
+    applyMetricSeverity(ramMetric, ramSev);
+
+    if (loadVal) {
+      loadVal.textContent = host.load_average["1m"].toFixed(1);
+    }
+    if (loadHint) {
+      loadHint.textContent = `حد ${host.load_limit} · ${host.cpu_cores} هسته`;
+    }
+    if (ramVal) {
+      ramVal.textContent = `${Math.round(host.memory.used_percent)}%`;
+    }
+    if (ramHint) {
+      ramHint.textContent = `حد ${host.memory_limit_percent}%`;
+    }
+
+    if (!msg) return;
     const alerts = [];
-    if (host.cpu_pressure) {
-      alerts.push(
-        `فشار CPU: load میانگین ${host.load_average["1m"].toFixed(2)} از حد ${host.load_limit} (${host.cpu_cores} هسته) — سیستم ممکن است پایدار نماند`
-      );
+    if (cpuSev === "danger") {
+      alerts.push({
+        sev: "danger",
+        text: `فشار بحرانی CPU: load ${host.load_average["1m"].toFixed(2)} برابر یا بیشتر از ${host.cpu_cores} هسته — سیستم پایدار نیست`,
+      });
+    } else if (cpuSev === "warn") {
+      alerts.push({
+        sev: "warn",
+        text: `CPU رو به فشار: load ${host.load_average["1m"].toFixed(2)} از حد ${host.load_limit} گذشت — مراقب باشید`,
+      });
     }
-    if (host.memory_pressure) {
-      alerts.push(
-        `RAM: ${host.memory.used_percent}% مصرف (حد مجاز ${host.memory_limit_percent}%) — افزودن دوربین توصیه نمی‌شود`
-      );
+    if (ramSev === "danger") {
+      alerts.push({
+        sev: "danger",
+        text: `RAM بحرانی: ${host.memory.used_percent}% مصرف — افزودن دوربین ممنوع`,
+      });
+    } else if (ramSev === "warn") {
+      alerts.push({
+        sev: "warn",
+        text: `RAM: ${host.memory.used_percent}% مصرف (حد ${host.memory_limit_percent}%) — افزودن دوربین توصیه نمی‌شود`,
+      });
     }
-
-    const alertHtml =
+    msg.innerHTML =
       alerts.length > 0
-        ? `<div class="system-alerts">${alerts.map((a) => `<p class="system-alert">${a}</p>`).join("")}</div>`
-        : `<p class="system-ok-msg">وضعیت سرور در محدوده امن است</p>`;
-
-    el.innerHTML = `
-      <h2 class="system-status-title">وضعیت سرور اصلی</h2>
-      <div class="system-status-grid">
-        <div class="system-metric">
-          <span class="system-metric-label">Load (1m)</span>
-          <span class="system-metric-value">${host.load_average["1m"].toFixed(2)} / ${host.load_limit}</span>
-          <span class="system-metric-hint">${host.cpu_cores} هسته — حد ۵۰٪</span>
-        </div>
-        <div class="system-metric">
-          <span class="system-metric-label">RAM</span>
-          <span class="system-metric-value">${host.memory.used_percent}%</span>
-          <span class="system-metric-hint">حد مجاز ${host.memory_limit_percent}%</span>
-        </div>
-      </div>
-      ${alertHtml}
-    `;
+        ? alerts
+            .map((a) => `<p class="status-alert status-alert--${a.sev}">${a.text}</p>`)
+            .join("")
+        : `<p class="status-ok-msg">وضعیت سرور در محدوده امن است</p>`;
   }
 
   function renderFrigateLoad(siteId, stats) {
@@ -113,7 +165,6 @@
       return;
     }
     const parts = [];
-    // CPU% can exceed 100 on multi-core (same as docker stats)
     if (cpu !== null) parts.push(`CPU: ${cpu}%`);
     if (mem !== null) parts.push(`RAM: ${mem}%`);
     el.textContent = parts.join(" · ");

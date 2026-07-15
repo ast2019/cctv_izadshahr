@@ -522,7 +522,11 @@
         if (userBar) userBar.hidden = true;
         updateIntro();
         showLoginModal();
+      } else {
+        hideLoginModal();
       }
+    } else {
+      showLoginModal();
     }
 
     await renderAllCards();

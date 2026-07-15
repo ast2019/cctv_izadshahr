@@ -4,13 +4,41 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.2";
+const PORTAL_VERSION = "1.6.6";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-13",
+    version: "1.6.6",
+    items: [
+      "هشدار دومرحله‌ای CPU و RAM: عبور از حد → زرد، فشار بحرانی → قرمز",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.6.5",
+    items: [
+      "رفع به‌هم‌ریختگی کامل صفحه — تگ main گم‌شده بازگردانده شد",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.6.4",
+    items: [
+      "رفع به‌هم‌ریختگی چیدمان صفحه (CSS وضعیت کلی و کارت‌ها)",
+    ],
+  },
+  {
+    date: "2026-07-13",
+    version: "1.6.3",
+    items: [
+      "ادغام وضعیت سرور و خلاصه دوربین‌ها در یک بلوک پایین صفحه",
+    ],
+  },
   {
     date: "2026-07-13",
     version: "1.6.2",
