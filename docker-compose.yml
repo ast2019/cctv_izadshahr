@@ -33,7 +33,7 @@ services:
       - "8557:8555/tcp"  # WebRTC
       - "8557:8555/udp"  # WebRTC
 
-  # center11 = پذیرش و هتل (reception)
+  # center11 = پذیرش و ورودی مجتمع (reception / complex entrance)
   frigate-center11:
     <<: *frigate-common
     container_name: frigate-center11

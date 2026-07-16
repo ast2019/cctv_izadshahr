@@ -39,6 +39,9 @@ go2rtc:
     # Password admin123
     restoran_sandogh:
       - rtsp://admin:admin123@192.168.51.14:554/Streaming/Channels/102
+    # Moved from center11 — restaurant area (admin123)
+    cam_13:
+      - rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102
 
 cameras:
   restoran_paeen:
@@ -57,6 +60,12 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/restoran_sandogh
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_13:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_13
           input_args: preset-rtsp-restream
           roles: [record]
 

@@ -1,4 +1,4 @@
-# center11 = پذیرش و هتل (reception). IP cameras. cam_201 = duplicate of cam_41 — removed.
+# center11 = پذیرش و ورودی مجتمع (reception / complex entrance). cam_201 = duplicate of cam_41 — removed.
 # Camera RTSP password is inline in each URL (admin:admin123, or 1259110%40av for new reception cams).
 mqtt:
   enabled: false
@@ -42,8 +42,7 @@ go2rtc:
     #   - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
     # cam_14: offline — disabled temporarily
     #   - rtsp://admin:admin123@192.168.51.14:554/Streaming/Channels/102
-    cam_13:
-      - rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102
+    # cam_13 moved to restaurant (رستوران) — was misgrouped under reception
     cam_41:
       - rtsp://admin:admin123@192.168.51.41:554/Streaming/Channels/102
     cam_4:
@@ -77,12 +76,7 @@ cameras:
           roles: [record]
   # cam_16: offline — disabled temporarily
   # cam_14: offline — disabled temporarily
-  cam_13:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_13
-          input_args: preset-rtsp-restream
-          roles: [record]
+  # cam_13 moved to restaurant
   cam_41:
     ffmpeg:
       inputs:
