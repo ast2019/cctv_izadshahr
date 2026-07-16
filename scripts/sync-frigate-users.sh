@@ -10,13 +10,17 @@ cd "$(dirname "$0")/.."
 
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 VIEWER_USER="${VIEWER_USER:-ceo}"
-VIEWER_PASSWORD="${VIEWER_PASSWORD:-Ceo@1405!}"
+VIEWER_PASSWORD="${VIEWER_PASSWORD:-Cctv1405}"
 VIEWER_ROLE="${VIEWER_ROLE:-viewer}"
 
 declare -A INSTANCES=(
   [frigate-cafe]=8972
   [frigate-center11]=8973
   [frigate-center22]=8974
+  [frigate-restaurant]=8975
+  [frigate-sahel]=8976
+  [frigate-villa]=8977
+  [frigate-mahoote]=8978
 )
 
 get_temp_admin_password() {
