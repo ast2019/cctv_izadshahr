@@ -1,4 +1,5 @@
-# center11 — IP cameras (cam 4,5,6,9,13,41). cam_201 = duplicate of cam_41 — removed.# Camera RTSP password is inline in each URL (admin:admin123).
+# center11 = پذیرش و هتل (reception). IP cameras. cam_201 = duplicate of cam_41 — removed.
+# Camera RTSP password is inline in each URL (admin:admin123, or 1259110%40av for new reception cams).
 mqtt:
   enabled: false
 
@@ -47,6 +48,13 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.41:554/Streaming/Channels/102
     cam_4:
       - rtsp://admin:admin123@192.168.51.4:554/Streaming/Channels/102
+    # Reception (پذیرش) — password 1259110@av (@ encoded as %40 in URL).
+    paziresh_be_pol:
+      - rtsp://admin:1259110%40av@192.168.51.134:554/Streaming/Channels/102
+    paziresh_be_sahel:
+      - rtsp://admin:1259110%40av@192.168.51.135:554/Streaming/Channels/102
+    shargh_vorodi:
+      - rtsp://admin:1259110%40av@192.168.51.131:554/Streaming/Channels/102
 
 cameras:
   cam_5:
@@ -85,6 +93,24 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cam_4
+          input_args: preset-rtsp-restream
+          roles: [record]
+  paziresh_be_pol:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/paziresh_be_pol
+          input_args: preset-rtsp-restream
+          roles: [record]
+  paziresh_be_sahel:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/paziresh_be_sahel
+          input_args: preset-rtsp-restream
+          roles: [record]
+  shargh_vorodi:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/shargh_vorodi
           input_args: preset-rtsp-restream
           roles: [record]
 

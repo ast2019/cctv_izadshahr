@@ -46,6 +46,13 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0
     dvr_cafe_ch3:
       - rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=3&subtype=0
+    # IP cameras — cafe area. Password 1259110@av (@ encoded as %40 in URL).
+    view_cafe_gharb:
+      - rtsp://admin:1259110%40av@192.168.51.52:554/Streaming/Channels/102
+    vorodi_cafe:
+      - rtsp://admin:1259110%40av@192.168.51.49:554/Streaming/Channels/102
+    view_cafe_shargh:
+      - rtsp://admin:1259110%40av@192.168.51.53:554/Streaming/Channels/102
 
 cameras:
   dvr_cafe_ch1:
@@ -94,6 +101,24 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/dvr_cafe_ch3
+          input_args: preset-rtsp-restream
+          roles: [record]
+  view_cafe_gharb:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/view_cafe_gharb
+          input_args: preset-rtsp-restream
+          roles: [record]
+  vorodi_cafe:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/vorodi_cafe
+          input_args: preset-rtsp-restream
+          roles: [record]
+  view_cafe_shargh:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/view_cafe_shargh
           input_args: preset-rtsp-restream
           roles: [record]
 

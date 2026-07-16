@@ -25,6 +25,11 @@ MEM_PERCENT_LIMIT = 30.0
 FRIGATE_SOURCES = [
     {"site": "cafe", "base": os.environ.get("FRIGATE_CAFE_URL", "http://frigate-cafe:5000")},
     {"site": "center11", "base": os.environ.get("FRIGATE_CENTER11_URL", "http://frigate-center11:5000")},
+    {"site": "center22", "base": os.environ.get("FRIGATE_CENTER22_URL", "http://frigate-center22:5000")},
+    {"site": "restaurant", "base": os.environ.get("FRIGATE_RESTAURANT_URL", "http://frigate-restaurant:5000")},
+    {"site": "sahel", "base": os.environ.get("FRIGATE_SAHEL_URL", "http://frigate-sahel:5000")},
+    {"site": "villa", "base": os.environ.get("FRIGATE_VILLA_URL", "http://frigate-villa:5000")},
+    {"site": "mahoote", "base": os.environ.get("FRIGATE_MAHOOTE_URL", "http://frigate-mahoote:5000")},
 ]
 
 SNAP_COUNT = int(os.environ.get("PORTAL_SNAP_COUNT", "8"))  # total tiles (split L/R)

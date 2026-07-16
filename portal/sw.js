@@ -57,7 +57,12 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/health/") ||
     url.pathname.startsWith("/cafe/") ||
-    url.pathname.startsWith("/center11/")
+    url.pathname.startsWith("/center11/") ||
+    url.pathname.startsWith("/center22/") ||
+    url.pathname.startsWith("/restaurant/") ||
+    url.pathname.startsWith("/sahel/") ||
+    url.pathname.startsWith("/villa/") ||
+    url.pathname.startsWith("/mahoote/")
   ) {
     return;
   }

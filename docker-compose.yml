@@ -33,6 +33,7 @@ services:
       - "8557:8555/tcp"  # WebRTC
       - "8557:8555/udp"  # WebRTC
 
+  # center11 = پذیرش و هتل (reception)
   frigate-center11:
     <<: *frigate-common
     container_name: frigate-center11
@@ -46,6 +47,7 @@ services:
       - "8559:8555/tcp"
       - "8559:8555/udp"
 
+  # center22 = پارکینگ (parking)
   frigate-center22:
     <<: *frigate-common
     container_name: frigate-center22
@@ -58,6 +60,58 @@ services:
       - "8560:8554"
       - "8561:8555/tcp"
       - "8561:8555/udp"
+
+  frigate-restaurant:
+    <<: *frigate-common
+    container_name: frigate-restaurant
+    volumes:
+      - ./config/restaurant:/config
+      - ./media/restaurant:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8975:8971"
+      - "8562:8554"
+      - "8563:8555/tcp"
+      - "8563:8555/udp"
+
+  frigate-sahel:
+    <<: *frigate-common
+    container_name: frigate-sahel
+    volumes:
+      - ./config/sahel:/config
+      - ./media/sahel:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8976:8971"
+      - "8564:8554"
+      - "8565:8555/tcp"
+      - "8565:8555/udp"
+
+  frigate-villa:
+    <<: *frigate-common
+    container_name: frigate-villa
+    volumes:
+      - ./config/villa:/config
+      - ./media/villa:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8977:8971"
+      - "8566:8554"
+      - "8567:8555/tcp"
+      - "8567:8555/udp"
+
+  frigate-mahoote:
+    <<: *frigate-common
+    container_name: frigate-mahoote
+    volumes:
+      - ./config/mahoote:/config
+      - ./media/mahoote:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8978:8971"
+      - "8568:8554"
+      - "8569:8555/tcp"
+      - "8569:8555/udp"
 
   # Host metrics + SQLite audit log (login/logout)
   portal-metrics:
@@ -88,6 +142,11 @@ services:
     depends_on:
       - frigate-cafe
       - frigate-center11
+      - frigate-center22
+      - frigate-restaurant
+      - frigate-sahel
+      - frigate-villa
+      - frigate-mahoote
       - portal-metrics
 
   portal-ssl:
@@ -106,4 +165,9 @@ services:
     depends_on:
       - frigate-cafe
       - frigate-center11
+      - frigate-center22
+      - frigate-restaurant
+      - frigate-sahel
+      - frigate-villa
+      - frigate-mahoote
       - portal-metrics

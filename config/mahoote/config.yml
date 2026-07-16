@@ -1,6 +1,4 @@
-# center22 = پارکینگ (parking). Record-only NVR. Camera RTSP password inline in URLs.
-# چند پارکینگ داریم؛ فعلاً «پارکینگ ویلا» فعال است. DVR پارکینگ۴ (192.168.51.222)
-# در docs/CAMERAS.md مستند است و در صورت نیاز همین‌جا اضافه می‌شود.
+# mahoote = محوطه. Record-only NVR. Camera RTSP password inline in URLs.
 mqtt:
   enabled: false
 
@@ -33,14 +31,15 @@ ffmpeg:
 
 go2rtc:
   streams:
-    parking_villa:
-      - rtsp://admin:admin123@192.168.51.132:554/Streaming/Channels/102
+    # generator: password admin123
+    generator:
+      - rtsp://admin:admin123@192.168.51.10:554/Streaming/Channels/102
 
 cameras:
-  parking_villa:
+  generator:
     ffmpeg:
       inputs:
-        - path: rtsp://127.0.0.1:8554/parking_villa
+        - path: rtsp://127.0.0.1:8554/generator
           input_args: preset-rtsp-restream
           roles: [record]
 
