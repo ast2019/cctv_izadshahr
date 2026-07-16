@@ -4,13 +4,24 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.7";
+const PORTAL_VERSION = "1.6.8";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-16",
+    version: "1.6.8",
+    items: [
+      "رفع حفره امنیتی XSS در پنل مدیریت (پاک‌سازی مقادیر لاگ قبل از نمایش)",
+      "اضافه‌شدن فونت وزیرمتن و آیکون‌های PWA که از مخزن جا افتاده بودند",
+      "رفع مسدودشدن API پرتال هنگام بروزرسانی اسنپ‌شات‌ها",
+      "رفع تداخل کانتینر و پورت در حالت SSL و اصلاح صدور گواهی Let's Encrypt",
+      "حالت آفلاین: دیگر به‌جای فایل‌های JS/فونت صفحه HTML برنمی‌گردد",
+    ],
+  },
   {
     date: "2026-07-16",
     version: "1.6.7",

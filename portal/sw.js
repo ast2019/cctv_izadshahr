@@ -1,19 +1,19 @@
 /* Offline-capable shell cache — network-first, local assets only */
-const CACHE = "cctv-portal-v1.6.7";
+const CACHE = "cctv-portal-v1.6.8";
 const SHELL = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/css/fonts.css?v=1.6.7",
-  "/css/main.css?v=1.6.7",
-  "/js/app.js?v=1.6.7",
-  "/js/sites.js?v=1.6.7",
-  "/js/auth-config.js?v=1.6.7",
-  "/js/changelog.js?v=1.6.7",
-  "/js/changelog-ui.js?v=1.6.7",
-  "/js/load-monitor.js?v=1.6.7",
-  "/js/admin-panel.js?v=1.6.7",
-  "/js/ambiance.js?v=1.6.7",
+  "/css/fonts.css?v=1.6.8",
+  "/css/main.css?v=1.6.8",
+  "/js/app.js?v=1.6.8",
+  "/js/sites.js?v=1.6.8",
+  "/js/auth-config.js?v=1.6.8",
+  "/js/changelog.js?v=1.6.8",
+  "/js/changelog-ui.js?v=1.6.8",
+  "/js/load-monitor.js?v=1.6.8",
+  "/js/admin-panel.js?v=1.6.8",
+  "/js/ambiance.js?v=1.6.8",
   "/fonts/Vazirmatn-Regular.woff2",
   "/fonts/Vazirmatn-Medium.woff2",
   "/fonts/Vazirmatn-SemiBold.woff2",
@@ -75,6 +75,12 @@ self.addEventListener("fetch", (event) => {
         }
         return res;
       })
-      .catch(() => caches.match(req).then((c) => c || caches.match("/index.html")))
+      .catch(() =>
+        caches.match(req).then((c) => {
+          if (c) return c;
+          if (req.mode === "navigate") return caches.match("/index.html");
+          return Response.error();
+        })
+      )
   );
 });

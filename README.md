@@ -2,17 +2,21 @@
 
 # Frigate — ایزدشهر
 
-سه نمونه‌ی Frigate (`0.16.3`) با یک `docker-compose.yml`. هر نمونه کانفیگ
+هفت نمونه‌ی Frigate (`0.16.3`) با یک `docker-compose.yml`. هر نمونه کانفیگ
 مستقل دارد؛ ویرایش کانفیگ → ری‌استارت همان سرویس.
 
 ## نمونه‌ها
 
 | نمونه       | پورت UI | پورت RTSP | کانتینر            | کانفیگ                   |
 |-------------|---------|-----------|--------------------|--------------------------|
-| `cafe`      | 8972    | 8556      | `frigate-cafe`     | `config/cafe/config.yml` |
-| `center11`  | 8973    | 8558      | `frigate-center11` | `config/center11/config.yml` |
-| `center22`  | 8974    | 8560      | `frigate-center22` | `config/center22/config.yml` |
-| **portal**  | **8888** | —        | `cctv-portal`      | `portal/` (صفحه ورود) |
+| `cafe`      | 8972    | 8556      | `frigate-cafe`       | `config/cafe/config.yml` |
+| `center11`  | 8973    | 8558      | `frigate-center11`   | `config/center11/config.yml` |
+| `center22`  | 8974    | 8560      | `frigate-center22`   | `config/center22/config.yml` |
+| `restaurant`| 8975    | 8562      | `frigate-restaurant` | `config/restaurant/config.yml` |
+| `sahel`     | 8976    | 8564      | `frigate-sahel`      | `config/sahel/config.yml` |
+| `villa`     | 8977    | 8566      | `frigate-villa`      | `config/villa/config.yml` |
+| `mahoote`   | 8978    | 8568      | `frigate-mahoote`    | `config/mahoote/config.yml` |
+| **portal**  | **8888** | —        | `cctv-portal`        | `portal/` (صفحه ورود) |
 
 ## ساختار
 
@@ -25,6 +29,10 @@ config/
   cafe/config.yml
   center11/config.yml
   center22/config.yml
+  restaurant/config.yml
+  sahel/config.yml
+  villa/config.yml
+  mahoote/config.yml
 scripts/sync-frigate-users.sh   # همگام‌سازی کاربران UI
 .cursor/rules/                  # قوانین پروژه برای AI
 media/                          # ضبط‌ها (در گیت نیست)
@@ -179,9 +187,13 @@ docker compose logs -f frigate-center11
 
 | نمونه | دوربین‌ها |
 |-------|-----------|
-| cafe | DVR ch 1–8 (فعال)؛ ch10 + ۵ IP کافه (planned) |
-| center11 | cam_4,5,6,9,13,41 (فعال)؛ cam_14,16 (offline) |
-| center22 | DVR parking4 (۵ کانال) + بقیه IP مرکز (planned) |
+| cafe | DVR ch1–8 + سه دوربین IP کافه |
+| center11 | cam_4,5,6,9,41 + پذیرش (۳ دوربین) |
+| center22 | parking_villa |
+| restaurant | restoran_bala/paeen/sandogh + cam_13 |
+| sahel | ۳ دوربین |
+| villa | ۲ دوربین |
+| mahoote | generator |
 
 ## نکته‌ها
 

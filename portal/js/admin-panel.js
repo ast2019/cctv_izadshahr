@@ -1,11 +1,18 @@
 /** Admin-only panel: login audit + broken cameras (SQLite via portal API). */
 (function () {
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
+  }
+
   function isAdmin() {
     try {
       const raw = localStorage.getItem("cctv_portal_session");
       if (!raw) return false;
       const sess = JSON.parse(raw);
       const adminUser = window.PORTAL_AUTH?.admin?.user || "admin";
+      if (!(sess?.at && Date.now() - sess.at <= 30 * 24 * 60 * 60 * 1000)) return false;
       return sess?.user === adminUser;
     } catch {
       return false;
@@ -38,7 +45,7 @@
       offline: "آفلاین",
       seen: "ثبت اولیه",
     };
-    return map[ev] || ev;
+    return map[ev] || esc(ev);
   }
 
   async function fetchJson(url) {
@@ -57,8 +64,8 @@
       <tr class="${e.success ? "" : "row-fail"}">
         <td>${fmtTs(e.ts)}</td>
         <td>${eventLabel(e.event)}</td>
-        <td dir="ltr">${e.username || "—"}</td>
-        <td dir="ltr">${e.ip || "—"}</td>
+        <td dir="ltr">${e.username ? esc(e.username) : "—"}</td>
+        <td dir="ltr">${e.ip ? esc(e.ip) : "—"}</td>
         <td>${e.success ? "موفق" : "ناموفق"}</td>
       </tr>`
       )
@@ -88,11 +95,11 @@
       .map(
         (c) => `
       <tr>
-        <td dir="ltr">${c.camera}</td>
-        <td>${c.site || "—"}</td>
+        <td dir="ltr">${esc(c.camera)}</td>
+        <td>${c.site ? esc(c.site) : "—"}</td>
         <td>${c.status === "offline" ? "آفلاین" : "خراب/قطع"}</td>
         <td>${fmtTs(c.last_change)}</td>
-        <td>${c.last_detail || "—"}</td>
+        <td>${c.last_detail ? esc(c.last_detail) : "—"}</td>
       </tr>`
       )
       .join("");
@@ -123,9 +130,9 @@
       <tr>
         <td>${fmtTs(e.ts)}</td>
         <td>${eventLabel(e.event)}</td>
-        <td dir="ltr">${e.camera}</td>
-        <td>${e.site || "—"}</td>
-        <td>${e.detail || "—"}</td>
+        <td dir="ltr">${esc(e.camera)}</td>
+        <td>${e.site ? esc(e.site) : "—"}</td>
+        <td>${e.detail ? esc(e.detail) : "—"}</td>
       </tr>`
       )
       .join("");
