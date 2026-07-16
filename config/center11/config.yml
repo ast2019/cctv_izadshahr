@@ -40,8 +40,8 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.9:554/Streaming/Channels/102
     # cam_16: offline — disabled temporarily
     #   - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
-    # cam_14: offline — disabled temporarily
-    #   - rtsp://admin:admin123@192.168.51.14:554/Streaming/Channels/102
+    # cam_14 (.14): DO NOT re-enable — same camera is now active as
+    # restoran_sandogh in config/restaurant/config.yml
     # cam_13 moved to restaurant (رستوران) — was misgrouped under reception
     cam_41:
       - rtsp://admin:admin123@192.168.51.41:554/Streaming/Channels/102
@@ -75,7 +75,7 @@ cameras:
           input_args: preset-rtsp-restream
           roles: [record]
   # cam_16: offline — disabled temporarily
-  # cam_14: offline — disabled temporarily
+  # cam_14: now active as restoran_sandogh in restaurant — do not re-enable here
   # cam_13 moved to restaurant
   cam_41:
     ffmpeg:
