@@ -27,5 +27,5 @@ sudo docker run --rm \
 export CCTV_DOMAIN="${DOMAIN}"
 envsubst '${CCTV_DOMAIN}' < portal/nginx.ssl.conf.template > portal/nginx.ssl.conf
 
-sudo docker compose --profile ssl up -d portal
+sudo docker compose --profile ssl up -d portal-ssl
 echo "Done. Portal: https://${DOMAIN}"

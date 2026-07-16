@@ -2,7 +2,7 @@
 """Portal API: host metrics + SQLite (auth audit + camera health) + hourly ambiance snapshots."""
 from __future__ import annotations
 
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
@@ -574,4 +574,4 @@ if __name__ == "__main__":
     SNAP_DIR.mkdir(parents=True, exist_ok=True)
     load_manifest_from_disk()
     threading.Thread(target=snapshot_worker, name="snap-worker", daemon=True).start()
-    HTTPServer(("0.0.0.0", 9090), Handler).serve_forever()
+    ThreadingHTTPServer(("0.0.0.0", 9090), Handler).serve_forever()

@@ -134,7 +134,6 @@ services:
     restart: unless-stopped
     ports:
       - "8888:80"
-      - "443:443"
     volumes:
       - ./portal:/usr/share/nginx/html:ro
       - ./portal/nginx.conf:/etc/nginx/conf.d/default.conf:ro
@@ -152,7 +151,7 @@ services:
   portal-ssl:
     profiles: ["ssl"]
     image: nginx:alpine
-    container_name: cctv-portal
+    container_name: cctv-portal-ssl
     restart: unless-stopped
     ports:
       - "80:80"
