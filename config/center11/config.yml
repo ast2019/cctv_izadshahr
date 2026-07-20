@@ -52,8 +52,7 @@ go2rtc:
       - rtsp://admin:1259110%40av@192.168.51.134:554/Streaming/Channels/102
     paziresh_be_sahel:
       - rtsp://admin:1259110%40av@192.168.51.135:554/Streaming/Channels/102
-    shargh_vorodi:
-      - rtsp://admin:1259110%40av@192.168.51.131:554/Streaming/Channels/102
+    # shargh_vorodi (.131) حذف شد — کار نمی‌کرد (به‌درخواست کاربر).
 
 cameras:
   cam_5:
@@ -99,12 +98,6 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/paziresh_be_sahel
-          input_args: preset-rtsp-restream
-          roles: [record]
-  shargh_vorodi:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/shargh_vorodi
           input_args: preset-rtsp-restream
           roles: [record]
 

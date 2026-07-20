@@ -22,7 +22,7 @@ const SITES = [
     description: "دوربین‌های پذیرش و ورودی مجتمع",
     icon: "🏨",
     port: 8973,
-    cameraCount: 8,
+    cameraCount: 7,
     enabled: true,
     healthPath: "/health/center11/",
     apiPath: "/center11/api/",
@@ -124,8 +124,8 @@ const SITES = [
  *          cam_14 با نام restoran_sandogh در نمونه restaurant فعال شد)
  */
 const CAMERA_INVENTORY = {
-  // active=36 در نمونه‌های دائمی + temp=37 (در حال شناسایی) + ch10 planned=1
-  total: 74,
+  // active=35 در نمونه‌های دائمی + temp=37 (در حال شناسایی) + ch10 planned=1
+  total: 73,
   inactive: 38, // 37 در نمونه موقت temp + dvr_cafe_ch10
-  broken: 0, // دوربین‌های خراب (rest_100/101، ashpazkhane_99، parking3_89/90) حذف شدند
+  broken: 0, // خراب‌ها حذف شدند (rest_100/101، ashpazkhane_99، parking3_89/90، shargh_vorodi)
 };
