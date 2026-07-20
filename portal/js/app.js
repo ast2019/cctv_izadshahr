@@ -328,13 +328,15 @@
   }
 
   /** Background refresh of all sites' cookies. Logs the user out ONLY when
-   *  the stored credentials are explicitly rejected (401) — never because a
-   *  Frigate instance is offline or the network hiccuped. */
+   *  EVERY site rejects the stored credentials (401) — i.e. the password was
+   *  truly changed. A subset returning 401 (an offline site, or a newly added
+   *  Frigate whose portal users aren't synced yet) must NOT lock the user out. */
   async function refreshAllSiteAuth() {
     if (!isLoggedIn()) return false;
     const enabled = SITES.filter((s) => s.enabled);
     const states = await Promise.all(enabled.map((s) => ensureSiteAuth(s)));
-    if (states.some((s) => s === "unauthorized")) {
+    const rejected = states.filter((s) => s === "unauthorized").length;
+    if (rejected > 0 && rejected === states.length) {
       forceRelogin();
       await renderAllCards();
       return false;
@@ -467,21 +469,12 @@
         e.preventDefault();
         el.classList.add("card--busy");
         try {
-          const state = site
-            ? await withTimeout(ensureSiteAuth(site), 4000, true)
-            : true;
-          if (state === "unauthorized") {
-            // A newly-created temporary Frigate may not have portal users synced
-            // yet. Never trap the user on the portal: open Frigate's native
-            // login page. Permanent sites still force a unified portal re-login.
-            if (site?.temporary) {
-              window.location.href = href;
-              return;
-            }
-            forceRelogin();
-            await renderAllCards();
-            return;
-          }
+          // Best-effort: refresh THIS site's cookie if we can, then ALWAYS
+          // navigate. A single instance that rejects the stored credentials
+          // (offline, or a new Frigate whose users aren't synced yet) must
+          // never trap the user on the portal — that Frigate shows its own
+          // login page only if it truly needs one.
+          if (site) await withTimeout(ensureSiteAuth(site), 4000, true);
           window.location.href = href;
         } finally {
           el.classList.remove("card--busy");

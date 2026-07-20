@@ -4,13 +4,21 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.13";
+const PORTAL_VERSION = "1.6.14";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-21",
+    version: "1.6.14",
+    items: [
+      "رفع بیرون‌انداختن مکرر از پرتال به‌خاطر نمونه‌های تازه‌اضافه‌شده — خروج فقط وقتی رمز واقعاً رد شود",
+      "کلیک روی هر بخش همیشه باز می‌شود و نشست پرتال را قطع نمی‌کند",
+    ],
+  },
   {
     date: "2026-07-21",
     version: "1.6.13",
