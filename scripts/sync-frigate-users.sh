@@ -21,6 +21,8 @@ declare -A INSTANCES=(
   [frigate-sahel]=8976
   [frigate-villa]=8977
   [frigate-mahoote]=8978
+  # Temporary camera-identification instance; keep its portal users in sync too.
+  [frigate-temp]=8979
 )
 
 get_temp_admin_password() {

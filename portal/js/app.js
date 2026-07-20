@@ -471,6 +471,13 @@
             ? await withTimeout(ensureSiteAuth(site), 4000, true)
             : true;
           if (state === "unauthorized") {
+            // A newly-created temporary Frigate may not have portal users synced
+            // yet. Never trap the user on the portal: open Frigate's native
+            // login page. Permanent sites still force a unified portal re-login.
+            if (site?.temporary) {
+              window.location.href = href;
+              return;
+            }
             forceRelogin();
             await renderAllCards();
             return;
