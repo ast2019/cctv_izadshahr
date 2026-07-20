@@ -41,6 +41,9 @@ go2rtc:
     # moved from cafe -> mahoote -> sahel — IP cam .53, password 1259110@av (@ encoded as %40)
     view_cafe_shargh:
       - rtsp://admin:1259110%40av@192.168.51.53:554/Streaming/Channels/102
+    # sahel_kanex (.16) — password admin123. (قبلاً به‌نام cam_16 آفلاین بود.)
+    sahel_kanex:
+      - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
 
 cameras:
   sahel_shargh:
@@ -65,6 +68,12 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/view_cafe_shargh
+          input_args: preset-rtsp-restream
+          roles: [record]
+  sahel_kanex:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/sahel_kanex
           input_args: preset-rtsp-restream
           roles: [record]
 

@@ -1,6 +1,6 @@
 # center22 = پارکینگ (parking). Record-only NVR. Camera RTSP password inline in URLs.
-# چند پارکینگ داریم؛ فعلاً «پارکینگ ویلا» فعال است. DVR پارکینگ۴ (192.168.51.222)
-# در docs/CAMERAS.md مستند است و در صورت نیاز همین‌جا اضافه می‌شود.
+# فعال: DVR پارکینگ۴ (192.168.51.222، ۵ کانال). دوربین‌های parking3 (.89/.90)
+# حذف شدند چون کار نمی‌کردند. parking_villa قبلاً به mahoote منتقل شده.
 mqtt:
   enabled: false
 
@@ -35,12 +35,8 @@ ffmpeg:
 # Parking cameras added here for testing — several timed out in earlier probes.
 go2rtc:
   streams:
-    # parking3 IP cams — password admin123. Previously timed out; testing.
-    ipcam_parking3_89:
-      - rtsp://admin:admin123@192.168.51.89:554/Streaming/Channels/102
-    # NOTE: .90 shares its IP with cam_90 (center) — keep only this one active.
-    ipcam_parking3_90:
-      - rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102
+    # NOTE: ipcam_parking3_89 (.89) و ipcam_parking3_90 (.90) حذف شدند چون
+    # کار نمی‌کردند (timeout / استریم بی‌اعتبار).
     # parking4 DVR (.222) — 5 channels, .sdp URL format (ch4/ch5 = warehouses).
     dvr_parking4_ch1:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=1_stream=0.sdp?real_stream
@@ -54,18 +50,6 @@ go2rtc:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
 
 cameras:
-  ipcam_parking3_89:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_parking3_89
-          input_args: preset-rtsp-restream
-          roles: [record]
-  ipcam_parking3_90:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/ipcam_parking3_90
-          input_args: preset-rtsp-restream
-          roles: [record]
   dvr_parking4_ch1:
     ffmpeg:
       inputs:

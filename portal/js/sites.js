@@ -36,7 +36,7 @@ const SITES = [
     description: "دوربین‌های رستوران (بالا، پایین، صندوق، cam_13)",
     icon: "🍽️",
     port: 8975,
-    cameraCount: 7,
+    cameraCount: 4,
     enabled: true,
     healthPath: "/health/restaurant/",
     apiPath: "/restaurant/api/",
@@ -50,7 +50,7 @@ const SITES = [
     description: "دوربین‌های ساحل شرق و غرب",
     icon: "🏖️",
     port: 8976,
-    cameraCount: 4,
+    cameraCount: 5,
     enabled: true,
     healthPath: "/health/sahel/",
     apiPath: "/sahel/api/",
@@ -92,10 +92,26 @@ const SITES = [
     description: "دوربین‌های پارکینگ (ویلا و ...)",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 7,
+    cameraCount: 5,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
+    cssClass: "card--active",
+  },
+  {
+    // موقت — دوربین‌های شناسایی‌نشده برای مرور و مرتب‌سازی. بعد از شناسایی حذف شود.
+    id: "temp",
+    slug: "temp",
+    title: "موقت — شناسایی دوربین‌ها",
+    titleEn: "Temporary — Camera ID",
+    description: "دوربین‌های فعال‌نشده مرکز برای مرور و مرتب‌سازی (موقت)",
+    icon: "🧪",
+    port: 8979,
+    cameraCount: 37,
+    enabled: true,
+    temporary: true,
+    healthPath: "/health/temp/",
+    apiPath: "/temp/api/",
     cssClass: "card--active",
   },
 ];
@@ -108,7 +124,8 @@ const SITES = [
  *          cam_14 با نام restoran_sandogh در نمونه restaurant فعال شد)
  */
 const CAMERA_INVENTORY = {
-  total: 77,
-  inactive: 36,
-  broken: 1,
+  // active=36 در نمونه‌های دائمی + temp=37 (در حال شناسایی) + ch10 planned=1
+  total: 74,
+  inactive: 38, // 37 در نمونه موقت temp + dvr_cafe_ch10
+  broken: 0, // دوربین‌های خراب (rest_100/101، ashpazkhane_99، parking3_89/90) حذف شدند
 };

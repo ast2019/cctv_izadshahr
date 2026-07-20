@@ -113,6 +113,22 @@ services:
       - "8569:8555/tcp"
       - "8569:8555/udp"
 
+  # TEMPORARY — دوربین‌های شناسایی‌نشده برای مرور و مرتب‌سازی. بعد از شناسایی حذف شود.
+  # فقط این نمونه را بالا بیاور:  docker compose up -d frigate-temp
+  frigate-temp:
+    <<: *frigate-common
+    container_name: frigate-temp
+    shm_size: "2gb"   # ~37 camera stream (temporary)
+    volumes:
+      - ./config/temp:/config
+      - ./media/temp:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8979:8971"
+      - "8570:8554"
+      - "8571:8555/tcp"
+      - "8571:8555/udp"
+
   # Host metrics + SQLite audit log (login/logout)
   portal-metrics:
     image: python:3.12-alpine
@@ -146,6 +162,7 @@ services:
       - frigate-sahel
       - frigate-villa
       - frigate-mahoote
+      - frigate-temp
       - portal-metrics
 
   portal-ssl:
@@ -169,4 +186,5 @@ services:
       - frigate-sahel
       - frigate-villa
       - frigate-mahoote
+      - frigate-temp
       - portal-metrics
