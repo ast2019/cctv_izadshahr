@@ -31,11 +31,70 @@ ffmpeg:
   output_args:
     record: preset-record-generic
 
-# parking_villa (.132) moved to mahoote. No cameras remain in this instance,
-# so frigate-center22 will NOT start until a camera is added below.
+# center22 = پارکینگ. Record-only NVR. parking_villa moved to mahoote.
+# Parking cameras added here for testing — several timed out in earlier probes.
 go2rtc:
-  streams: {}
+  streams:
+    # parking3 IP cams — password admin123. Previously timed out; testing.
+    ipcam_parking3_89:
+      - rtsp://admin:admin123@192.168.51.89:554/Streaming/Channels/102
+    # NOTE: .90 shares its IP with cam_90 (center) — keep only this one active.
+    ipcam_parking3_90:
+      - rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102
+    # parking4 DVR (.222) — 5 channels, .sdp URL format (ch4/ch5 = warehouses).
+    dvr_parking4_ch1:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=1_stream=0.sdp?real_stream
+    dvr_parking4_ch2:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=2_stream=0.sdp?real_stream
+    dvr_parking4_ch3:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=3_stream=0.sdp?real_stream
+    dvr_parking4_ch4:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream
+    dvr_parking4_ch5:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
 
-cameras: {}
+cameras:
+  ipcam_parking3_89:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ipcam_parking3_89
+          input_args: preset-rtsp-restream
+          roles: [record]
+  ipcam_parking3_90:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ipcam_parking3_90
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch1:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch1
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch2:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch2
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch3:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch3
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch4:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch4
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch5:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch5
+          input_args: preset-rtsp-restream
+          roles: [record]
 
 version: 0.16-0

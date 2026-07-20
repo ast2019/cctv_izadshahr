@@ -42,6 +42,15 @@ go2rtc:
     # Moved from center11 — restaurant area (admin123)
     cam_13:
       - rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102
+    # Restaurant + kitchen IP cams (admin123). Using /102 substream like the
+    # other cams. NOTE: these timed out in earlier probes — verify on server.
+    ipcam_rest_100:
+      - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/102
+    ipcam_rest_101:
+      - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/102
+    # ashpazkhane = kitchen. H.265 on camera — switch to H.264 if issues.
+    ipcam_ashpazkhane_99:
+      - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/102
 
 cameras:
   restoran_paeen:
@@ -66,6 +75,24 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cam_13
+          input_args: preset-rtsp-restream
+          roles: [record]
+  ipcam_rest_100:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ipcam_rest_100
+          input_args: preset-rtsp-restream
+          roles: [record]
+  ipcam_rest_101:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ipcam_rest_101
+          input_args: preset-rtsp-restream
+          roles: [record]
+  ipcam_ashpazkhane_99:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ipcam_ashpazkhane_99
           input_args: preset-rtsp-restream
           roles: [record]
 

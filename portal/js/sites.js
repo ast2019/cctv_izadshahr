@@ -36,7 +36,7 @@ const SITES = [
     description: "دوربین‌های رستوران (بالا، پایین، صندوق، cam_13)",
     icon: "🍽️",
     port: 8975,
-    cameraCount: 4,
+    cameraCount: 7,
     enabled: true,
     healthPath: "/health/restaurant/",
     apiPath: "/restaurant/api/",
@@ -92,7 +92,7 @@ const SITES = [
     description: "دوربین‌های پارکینگ (ویلا و ...)",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 0,
+    cameraCount: 7,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
@@ -109,6 +109,6 @@ const SITES = [
  */
 const CAMERA_INVENTORY = {
   total: 77,
-  inactive: 46,
+  inactive: 36,
   broken: 1,
 };
