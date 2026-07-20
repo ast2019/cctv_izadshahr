@@ -104,10 +104,11 @@ const SITES = [
  * Inventory overview (docs/CAMERAS.md).
  * total = همه دوربین‌های شناخته‌شده
  * inactive = هنوز فعال نشده / planned
- * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است (مثل cam_14, cam_16)
+ * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است (فقط cam_16 —
+ *          cam_14 با نام restoran_sandogh در نمونه restaurant فعال شد)
  */
 const CAMERA_INVENTORY = {
   total: 77,
-  inactive: 45,
-  broken: 2,
+  inactive: 46,
+  broken: 1,
 };

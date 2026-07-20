@@ -11,7 +11,10 @@
       const raw = localStorage.getItem("cctv_portal_session");
       if (!raw) return false;
       const sess = JSON.parse(raw);
-      const adminUser = window.PORTAL_AUTH?.admin?.user || "admin";
+      // PORTAL_AUTH is a top-level const in auth-config.js — a global binding,
+      // NOT a window property — so read it by name (as app.js does), not off window.
+      const adminUser =
+        (typeof PORTAL_AUTH !== "undefined" && PORTAL_AUTH?.admin?.user) || "admin";
       if (!(sess?.at && Date.now() - sess.at <= 30 * 24 * 60 * 60 * 1000)) return false;
       return sess?.user === adminUser;
     } catch {

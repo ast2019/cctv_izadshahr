@@ -4,13 +4,28 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.8";
+const PORTAL_VERSION = "1.6.10";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-16",
+    version: "1.6.10",
+    items: [
+      "رفع باگ تشخیص ادمین در پنل مدیریت اگر نام کاربری ادمین از حالت پیش‌فرض تغییر کند",
+    ],
+  },
+  {
+    date: "2026-07-16",
+    version: "1.6.9",
+    items: [
+      "اصلاح آمار دوربین‌ها: فقط cam_16 خراب است (cam_14 با نام restoran_sandogh فعال شد)",
+      "به‌روزرسانی مستندات دوربین‌ها: علامت‌گذاری ۱۰ دوربین که با نام جدید فعال شده‌اند (جلوگیری از افزودن تکراری)",
+    ],
+  },
   {
     date: "2026-07-16",
     version: "1.6.8",
