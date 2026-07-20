@@ -44,6 +44,13 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102
     # NOTE: ipcam_rest_100/101 (.100/.101) و ipcam_ashpazkhane_99 (.99) حذف شدند
     # چون کار نمی‌کردند (timeout در تست‌ها).
+    # --- شناسایی‌شده در temp و منتقل‌شده به رستوران (password admin123) ---
+    cam_18:
+      - rtsp://admin:admin123@192.168.51.18:554/Streaming/Channels/102
+    cam_19:
+      - rtsp://admin:admin123@192.168.51.19:554/Streaming/Channels/102
+    cam_31:
+      - rtsp://admin:admin123@192.168.51.31:554/Streaming/Channels/102
 
 cameras:
   restoran_paeen:
@@ -68,6 +75,24 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cam_13
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_18:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_18
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_19:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_19
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_31:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_31
           input_args: preset-rtsp-restream
           roles: [record]
 

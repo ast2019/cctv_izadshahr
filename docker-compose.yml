@@ -113,7 +113,35 @@ services:
       - "8569:8555/tcp"
       - "8569:8555/udp"
 
-  # TEMPORARY — دوربین‌های شناسایی‌نشده برای مرور و مرتب‌سازی. بعد از شناسایی حذف شود.
+  # tasisat = تاسیسات (تسویه‌خانه + خشکشویی)
+  frigate-tasisat:
+    <<: *frigate-common
+    container_name: frigate-tasisat
+    volumes:
+      - ./config/tasisat:/config
+      - ./media/tasisat:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8980:8971"
+      - "8572:8554"
+      - "8573:8555/tcp"
+      - "8573:8555/udp"
+
+  # entezamat = انتظامات
+  frigate-entezamat:
+    <<: *frigate-common
+    container_name: frigate-entezamat
+    volumes:
+      - ./config/entezamat:/config
+      - ./media/entezamat:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8981:8971"
+      - "8574:8554"
+      - "8575:8555/tcp"
+      - "8575:8555/udp"
+
+  # TEMPORARY — دوربین‌های باقی‌مانده برای بررسی. بعد از تعیین تکلیف حذف شود.
   # فقط این نمونه را بالا بیاور:  docker compose up -d frigate-temp
   frigate-temp:
     <<: *frigate-common
@@ -162,6 +190,8 @@ services:
       - frigate-sahel
       - frigate-villa
       - frigate-mahoote
+      - frigate-tasisat
+      - frigate-entezamat
       - frigate-temp
       - portal-metrics
 
@@ -186,5 +216,7 @@ services:
       - frigate-sahel
       - frigate-villa
       - frigate-mahoote
+      - frigate-tasisat
+      - frigate-entezamat
       - frigate-temp
       - portal-metrics

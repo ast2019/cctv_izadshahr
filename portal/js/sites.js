@@ -33,10 +33,10 @@ const SITES = [
     slug: "restaurant",
     title: "رستوران",
     titleEn: "Restaurant",
-    description: "دوربین‌های رستوران (بالا، پایین، صندوق، cam_13)",
+    description: "دوربین‌های رستوران (بالا، پایین، صندوق و ...)",
     icon: "🍽️",
     port: 8975,
-    cameraCount: 4,
+    cameraCount: 7,
     enabled: true,
     healthPath: "/health/restaurant/",
     apiPath: "/restaurant/api/",
@@ -64,7 +64,7 @@ const SITES = [
     description: "دوربین‌های ویلاها",
     icon: "🏠",
     port: 8977,
-    cameraCount: 2,
+    cameraCount: 7,
     enabled: true,
     healthPath: "/health/villa/",
     apiPath: "/villa/api/",
@@ -78,7 +78,7 @@ const SITES = [
     description: "دوربین‌های محوطه (ژنراتور و ...)",
     icon: "🌳",
     port: 8978,
-    cameraCount: 2,
+    cameraCount: 13,
     enabled: true,
     healthPath: "/health/mahoote/",
     apiPath: "/mahoote/api/",
@@ -89,25 +89,53 @@ const SITES = [
     slug: "center22",
     title: "پارکینگ",
     titleEn: "Parking",
-    description: "دوربین‌های پارکینگ (ویلا و ...)",
+    description: "دوربین‌های پارکینگ و انبار",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 5,
+    cameraCount: 12,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
     cssClass: "card--active",
   },
   {
-    // موقت — دوربین‌های شناسایی‌نشده برای مرور و مرتب‌سازی. بعد از شناسایی حذف شود.
+    id: "tasisat",
+    slug: "tasisat",
+    title: "تاسیسات",
+    titleEn: "Facilities",
+    description: "تسویه‌خانه (cam_81، cam_83) و خشکشویی (cam_95)",
+    icon: "⚙️",
+    port: 8980,
+    cameraCount: 3,
+    enabled: true,
+    healthPath: "/health/tasisat/",
+    apiPath: "/tasisat/api/",
+    cssClass: "card--active",
+  },
+  {
+    id: "entezamat",
+    slug: "entezamat",
+    title: "انتظامات",
+    titleEn: "Security",
+    description: "دوربین‌های انتظامات",
+    icon: "🛡️",
+    port: 8981,
+    cameraCount: 2,
+    enabled: true,
+    healthPath: "/health/entezamat/",
+    apiPath: "/entezamat/api/",
+    cssClass: "card--active",
+  },
+  {
+    // موقت — دوربین‌های باقی‌مانده برای بررسی. بعد از تعیین تکلیف حذف شود.
     id: "temp",
     slug: "temp",
-    title: "موقت — شناسایی دوربین‌ها",
-    titleEn: "Temporary — Camera ID",
-    description: "دوربین‌های فعال‌نشده مرکز برای مرور و مرتب‌سازی (موقت)",
+    title: "موقت — بررسی دوربین‌ها",
+    titleEn: "Temporary — Review",
+    description: "۶ دوربین باقی‌مانده (۴ بدون تصویر + cam_82، cam_112 بدون مقصد)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 37,
+    cameraCount: 6,
     enabled: true,
     temporary: true,
     healthPath: "/health/temp/",
@@ -124,8 +152,8 @@ const SITES = [
  *          cam_14 با نام restoran_sandogh در نمونه restaurant فعال شد)
  */
 const CAMERA_INVENTORY = {
-  // active=35 در نمونه‌های دائمی + temp=37 (در حال شناسایی) + ch10 planned=1
+  // active=66 در نمونه‌های دائمی + temp=6 (در حال بررسی) + ch10 planned=1
   total: 73,
-  inactive: 38, // 37 در نمونه موقت temp + dvr_cafe_ch10
-  broken: 0, // خراب‌ها حذف شدند (rest_100/101، ashpazkhane_99، parking3_89/90، shargh_vorodi)
+  inactive: 7, // 6 در نمونه موقت temp + dvr_cafe_ch10
+  broken: 0, // خراب‌ها حذف شدند
 };

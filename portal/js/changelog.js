@@ -4,13 +4,21 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.11";
+const PORTAL_VERSION = "1.6.12";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-21",
+    version: "1.6.12",
+    items: [
+      "افزوده‌شدن بخش‌های «تاسیسات» (تسویه‌خانه و خشکشویی) و «انتظامات»",
+      "توزیع دوربین‌های شناسایی‌شده به محوطه، ویلا، پارکینگ، رستوران و انبار",
+    ],
+  },
   {
     date: "2026-07-20",
     version: "1.6.11",

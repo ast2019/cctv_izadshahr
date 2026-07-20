@@ -1,0 +1,54 @@
+# entezamat = انتظامات. Record-only NVR. Camera RTSP password inline in URLs.
+mqtt:
+  enabled: false
+
+# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
+# and 30-day sessions so the UI stops asking for the password every day.
+auth:
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
+
+detect:
+  enabled: false
+
+record:
+  enabled: true
+  retain:
+    days: 1
+    mode: all
+
+snapshots:
+  enabled: false
+
+birdseye:
+  enabled: false
+
+ffmpeg:
+  global_args: -hide_banner -loglevel warning
+  output_args:
+    record: preset-record-generic
+
+go2rtc:
+  streams:
+    # انتظامات — password admin123
+    cam_3:
+      - rtsp://admin:admin123@192.168.51.3:554/Streaming/Channels/102
+    cam_7:
+      - rtsp://admin:admin123@192.168.51.7:554/Streaming/Channels/102
+
+cameras:
+  cam_3:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_3
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_7:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_7
+          input_args: preset-rtsp-restream
+          roles: [record]
+
+version: 0.16-0

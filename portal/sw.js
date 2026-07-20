@@ -1,19 +1,19 @@
 /* Offline-capable shell cache — network-first, local assets only */
-const CACHE = "cctv-portal-v1.6.11";
+const CACHE = "cctv-portal-v1.6.12";
 const SHELL = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/css/fonts.css?v=1.6.11",
-  "/css/main.css?v=1.6.11",
-  "/js/app.js?v=1.6.11",
-  "/js/sites.js?v=1.6.11",
-  "/js/auth-config.js?v=1.6.11",
-  "/js/changelog.js?v=1.6.11",
-  "/js/changelog-ui.js?v=1.6.11",
-  "/js/load-monitor.js?v=1.6.11",
-  "/js/admin-panel.js?v=1.6.11",
-  "/js/ambiance.js?v=1.6.11",
+  "/css/fonts.css?v=1.6.12",
+  "/css/main.css?v=1.6.12",
+  "/js/app.js?v=1.6.12",
+  "/js/sites.js?v=1.6.12",
+  "/js/auth-config.js?v=1.6.12",
+  "/js/changelog.js?v=1.6.12",
+  "/js/changelog-ui.js?v=1.6.12",
+  "/js/load-monitor.js?v=1.6.12",
+  "/js/admin-panel.js?v=1.6.12",
+  "/js/ambiance.js?v=1.6.12",
   "/fonts/Vazirmatn-Regular.woff2",
   "/fonts/Vazirmatn-Medium.woff2",
   "/fonts/Vazirmatn-SemiBold.woff2",
@@ -63,6 +63,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/sahel/") ||
     url.pathname.startsWith("/villa/") ||
     url.pathname.startsWith("/mahoote/") ||
+    url.pathname.startsWith("/tasisat/") ||
+    url.pathname.startsWith("/entezamat/") ||
     url.pathname.startsWith("/temp/")
   ) {
     return;

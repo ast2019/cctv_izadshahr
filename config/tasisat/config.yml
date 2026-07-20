@@ -1,0 +1,66 @@
+# tasisat = تاسیسات. Record-only NVR. Camera RTSP password inline in URLs.
+# محتوای این نمونه:
+#   - تسویه‌خانه: cam_81 (.81) و cam_83 (.83)
+#   - خشکشویی:   cam_95 (.95)
+mqtt:
+  enabled: false
+
+# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
+# and 30-day sessions so the UI stops asking for the password every day.
+auth:
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
+
+detect:
+  enabled: false
+
+record:
+  enabled: true
+  retain:
+    days: 1
+    mode: all
+
+snapshots:
+  enabled: false
+
+birdseye:
+  enabled: false
+
+ffmpeg:
+  global_args: -hide_banner -loglevel warning
+  output_args:
+    record: preset-record-generic
+
+go2rtc:
+  streams:
+    # تسویه‌خانه — password admin123
+    cam_81:
+      - rtsp://admin:admin123@192.168.51.81:554/Streaming/Channels/102
+    cam_83:
+      - rtsp://admin:admin123@192.168.51.83:554/Streaming/Channels/102
+    # خشکشویی — password admin123
+    cam_95:
+      - rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102
+
+cameras:
+  cam_81:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_81
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_83:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_83
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_95:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_95
+          input_args: preset-rtsp-restream
+          roles: [record]
+
+version: 0.16-0

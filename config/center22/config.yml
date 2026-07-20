@@ -48,6 +48,22 @@ go2rtc:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream
     dvr_parking4_ch5:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
+    # --- پارکینگ: شناسایی‌شده در temp و منتقل‌شده (password admin123) ---
+    cam_8:
+      - rtsp://admin:admin123@192.168.51.8:554/Streaming/Channels/102
+    cam_91:
+      - rtsp://admin:admin123@192.168.51.91:554/Streaming/Channels/102
+    cam_92:
+      - rtsp://admin:admin123@192.168.51.92:554/Streaming/Channels/102
+    cam_93:
+      - rtsp://admin:admin123@192.168.51.93:554/Streaming/Channels/102
+    cam_94:
+      - rtsp://admin:admin123@192.168.51.94:554/Streaming/Channels/102
+    # --- انبار: به انبارهای قبلی (کانال‌های انبار DVR پارکینگ۴) اضافه شد ---
+    cam_97:
+      - rtsp://admin:admin123@192.168.51.97:554/Streaming/Channels/102
+    cam_98:
+      - rtsp://admin:admin123@192.168.51.98:554/Streaming/Channels/102
 
 cameras:
   dvr_parking4_ch1:
@@ -78,6 +94,48 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/dvr_parking4_ch5
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_8:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_8
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_91:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_91
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_92:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_92
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_93:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_93
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_94:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_94
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_97:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_97
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_98:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_98
           input_args: preset-rtsp-restream
           roles: [record]
 
