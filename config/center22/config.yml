@@ -31,17 +31,11 @@ ffmpeg:
   output_args:
     record: preset-record-generic
 
+# parking_villa (.132) moved to mahoote. No cameras remain in this instance,
+# so frigate-center22 will NOT start until a camera is added below.
 go2rtc:
-  streams:
-    parking_villa:
-      - rtsp://admin:admin123@192.168.51.132:554/Streaming/Channels/102
+  streams: {}
 
-cameras:
-  parking_villa:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/parking_villa
-          input_args: preset-rtsp-restream
-          roles: [record]
+cameras: {}
 
 version: 0.16-0
