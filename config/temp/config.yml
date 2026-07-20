@@ -8,10 +8,10 @@
 mqtt:
   enabled: false
 
+# نمونه‌ی موقتِ داخلی برای شناسایی — احراز هویت خاموش تا بدون لاگین باز شود
+# (کاربرانش با پرتال sync نیستند). فقط شبکه داخلی؛ کل نمونه بعداً حذف می‌شود.
 auth:
-  cookie_secure: false
-  session_length: 2592000
-  refresh_time: 1296000
+  enabled: false
 
 detect:
   enabled: false
