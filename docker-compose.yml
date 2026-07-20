@@ -141,6 +141,20 @@ services:
       - "8575:8555/tcp"
       - "8575:8555/udp"
 
+  # anbar = انبار (جدا از پارکینگ)
+  frigate-anbar:
+    <<: *frigate-common
+    container_name: frigate-anbar
+    volumes:
+      - ./config/anbar:/config
+      - ./media/anbar:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8982:8971"
+      - "8576:8554"
+      - "8577:8555/tcp"
+      - "8577:8555/udp"
+
   # TEMPORARY — دوربین‌های باقی‌مانده برای بررسی. بعد از تعیین تکلیف حذف شود.
   # فقط این نمونه را بالا بیاور:  docker compose up -d frigate-temp
   frigate-temp:
@@ -192,6 +206,7 @@ services:
       - frigate-mahoote
       - frigate-tasisat
       - frigate-entezamat
+      - frigate-anbar
       - frigate-temp
       - portal-metrics
 
@@ -218,5 +233,6 @@ services:
       - frigate-mahoote
       - frigate-tasisat
       - frigate-entezamat
+      - frigate-anbar
       - frigate-temp
       - portal-metrics

@@ -1,0 +1,75 @@
+# anbar = انبار. Record-only NVR. جدا شده از پارکینگ (center22).
+# محتوا:
+#   - انبار مرکزی:    dvr_parking4_ch4 (DVR .222 کانال ۴)
+#   - انبار خانه‌داری: dvr_parking4_ch5 (DVR .222 کانال ۵)
+#   - انبار (IP):     cam_97 (.97)، cam_98 (.98)
+mqtt:
+  enabled: false
+
+# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
+# and 30-day sessions so the UI stops asking for the password every day.
+auth:
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
+
+detect:
+  enabled: false
+
+record:
+  enabled: true
+  retain:
+    days: 1
+    mode: all
+
+snapshots:
+  enabled: false
+
+birdseye:
+  enabled: false
+
+ffmpeg:
+  global_args: -hide_banner -loglevel warning
+  output_args:
+    record: preset-record-generic
+
+go2rtc:
+  streams:
+    # کانال‌های انبارِ DVR پارکینگ۴ (.222) — فرمت .sdp
+    dvr_parking4_ch4:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream
+    dvr_parking4_ch5:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
+    # دوربین‌های IP انبار — password admin123
+    cam_97:
+      - rtsp://admin:admin123@192.168.51.97:554/Streaming/Channels/102
+    cam_98:
+      - rtsp://admin:admin123@192.168.51.98:554/Streaming/Channels/102
+
+cameras:
+  dvr_parking4_ch4:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch4
+          input_args: preset-rtsp-restream
+          roles: [record]
+  dvr_parking4_ch5:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/dvr_parking4_ch5
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_97:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_97
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_98:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_98
+          input_args: preset-rtsp-restream
+          roles: [record]
+
+version: 0.16-0

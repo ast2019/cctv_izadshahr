@@ -23,6 +23,7 @@ declare -A INSTANCES=(
   [frigate-mahoote]=8978
   [frigate-tasisat]=8980
   [frigate-entezamat]=8981
+  [frigate-anbar]=8982
   # Temporary camera-identification instance; keep its portal users in sync too.
   [frigate-temp]=8979
 )
