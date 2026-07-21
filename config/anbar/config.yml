@@ -6,12 +6,10 @@
 mqtt:
   enabled: false
 
-# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
-# and 30-day sessions so the UI stops asking for the password every day.
+# نمونه‌ی داخلی — احراز هویت خاموش تا بدون لاگین باز شود و پرتال آمارش را بخواند
+# (مثل نمونه‌ی temp). کاربرهایش با پرتال sync نشده‌اند؛ فقط شبکه‌ی داخلی.
 auth:
-  cookie_secure: false
-  session_length: 2592000
-  refresh_time: 1296000
+  enabled: false
 
 detect:
   enabled: false
