@@ -1,9 +1,7 @@
-# mahoote = محوطه. Record-only NVR. Camera RTSP password inline in URLs.
+# mahoote = محوطه. Record-only NVR.
 mqtt:
   enabled: false
 
-# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
-# and 30-day sessions so the UI stops asking for the password every day.
 auth:
   cookie_secure: false
   session_length: 2592000
@@ -31,115 +29,51 @@ ffmpeg:
 
 go2rtc:
   streams:
-    # generator: password admin123
     generator:
       - rtsp://admin:admin123@192.168.51.10:554/Streaming/Channels/102
-    # moved from center22 (parking) — IP cam .132, password admin123
     parking_villa:
       - rtsp://admin:admin123@192.168.51.132:554/Streaming/Channels/102
-    # --- شناسایی‌شده در temp و منتقل‌شده به محوطه (password admin123 مگر ذکر شود) ---
-    cam_30:
-      - rtsp://admin:admin123@192.168.51.30:554/Streaming/Channels/102
-    cam_71:
-      - rtsp://admin:admin123@192.168.51.71:554/Streaming/Channels/102
-    cam_2:
-      - rtsp://admin:admin123@192.168.51.2:554/Streaming/Channels/102
     cam_24:
       - rtsp://admin:admin123@192.168.51.24:554/Streaming/Channels/102
     cam_25:
       - rtsp://admin:admin123@192.168.51.25:554/Streaming/Channels/102
     cam_27:
       - rtsp://admin:admin123@192.168.51.27:554/Streaming/Channels/102
-    cam_42:
-      - rtsp://admin:admin123@192.168.51.42:554/Streaming/Channels/102
-    cam_46:
-      - rtsp://admin:admin123@192.168.51.46:554/Streaming/Channels/102
-    # cam_50: password 1259110@av (@ → %40)
+    cam_30:
+      - rtsp://admin:admin123@192.168.51.30:554/Streaming/Channels/102
+    cam_31:
+      - rtsp://admin:admin123@192.168.51.31:554/Streaming/Channels/102
     cam_50:
       - rtsp://admin:1259110%40av@192.168.51.50:554/Streaming/Channels/102
-    cam_65:
-      - rtsp://admin:admin123@192.168.51.65:554/Streaming/Channels/102
+    cam_71:
+      - rtsp://admin:admin123@192.168.51.71:554/Streaming/Channels/102
+    cam_153:
+      - rtsp://admin:admin123@192.168.51.153:554/Streaming/Channels/102
     cam_203:
       - rtsp://admin:admin123@192.168.51.203:554/Streaming/Channels/102
 
 cameras:
   generator:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/generator
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/generator, input_args: preset-rtsp-restream, roles: [record] }] }
   parking_villa:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/parking_villa
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_30:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_30
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_71:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_71
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_2:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_2
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/parking_villa, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_24:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_24
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_24, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_25:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_25
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_25, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_27:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_27
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_42:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_42
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_46:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_46
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_27, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_30:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_30, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_31:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_31, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_50:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_50
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_65:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_65
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_50, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_71:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_71, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_153:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_153, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_203:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_203
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_203, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

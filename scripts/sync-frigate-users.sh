@@ -1,108 +1,172 @@
 #!/usr/bin/env bash
-# Sync Frigate UI users across instances (run on server from repo root).
-# Usage:
-#   ADMIN_PASSWORD='CctvAdmin1405' VIEWER_PASSWORD='Cctv1405' ./scripts/sync-frigate-users.sh
-#
-# Requires: curl, docker compose, sudo
+# Sync and verify Frigate UI users across every instance.
+# Run from any directory after (re)creating the Frigate containers.
+# Optional overrides:
+#   ADMIN_PASSWORD=... VIEWER_USER=... VIEWER_PASSWORD=... VIEWER_ROLE=...
 
-set -euo pipefail
+set -uo pipefail
 cd "$(dirname "$0")/.."
 
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-CctvAdmin1405}"
 VIEWER_USER="${VIEWER_USER:-ceo}"
 VIEWER_PASSWORD="${VIEWER_PASSWORD:-Cctv1405}"
 VIEWER_ROLE="${VIEWER_ROLE:-viewer}"
+READY_RETRIES="${READY_RETRIES:-30}"
+READY_DELAY="${READY_DELAY:-2}"
 
-declare -A INSTANCES=(
-  [frigate-cafe]=8972
-  [frigate-center11]=8973
-  [frigate-center22]=8974
-  [frigate-restaurant]=8975
-  [frigate-sahel]=8976
-  [frigate-villa]=8977
-  [frigate-mahoote]=8978
-  [frigate-tasisat]=8980
-  [frigate-entezamat]=8981
-  [frigate-anbar]=8982
-  # Temporary camera-identification instance; keep its portal users in sync too.
-  [frigate-temp]=8979
+INSTANCES=(
+  "frigate-cafe:8972"
+  "frigate-center11:8973"
+  "frigate-center22:8974"
+  "frigate-restaurant:8975"
+  "frigate-sahel:8976"
+  "frigate-villa:8977"
+  "frigate-mahoote:8978"
+  "frigate-temp:8979"
+  "frigate-tasisat:8980"
+  "frigate-entezamat:8981"
+  "frigate-anbar:8982"
 )
+
+compose() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    docker compose "$@"
+  else
+    sudo docker compose "$@"
+  fi
+}
 
 get_temp_admin_password() {
   local service="$1"
-  sudo docker compose logs "$service" 2>&1 \
+  compose logs "$service" 2>&1 \
     | grep 'Password:' \
     | grep '\*\*\*' \
     | tail -1 \
     | sed 's/.*Password: //;s/   \*\*\*//'
 }
 
+wait_for_gateway() {
+  local port="$1" attempt
+  for ((attempt = 1; attempt <= READY_RETRIES; attempt++)); do
+    if curl -sk --connect-timeout 2 --max-time 5 -o /dev/null \
+      "https://127.0.0.1:${port}/api/version"; then
+      return 0
+    fi
+    sleep "$READY_DELAY"
+  done
+  return 1
+}
+
 login_token() {
   local port="$1" user="$2" pass="$3"
-  curl -sk -X POST "https://127.0.0.1:${port}/api/login" \
+  curl -fsSk --connect-timeout 3 --max-time 10 \
+    -X POST "https://127.0.0.1:${port}/api/login" \
     -H "Content-Type: application/json" \
     -d "{\"user\":\"${user}\",\"password\":\"${pass}\"}" \
-    -c - | awk '/frigate_token/ {print $7}'
+    -c - 2>/dev/null | awk '/frigate_token/ {print $7}'
 }
 
 api() {
   local method="$1" port="$2" token="$3" path="$4" data="${5:-}"
+  local args=(-fsSk --connect-timeout 3 --max-time 15 -X "$method"
+    "https://127.0.0.1:${port}${path}"
+    -H "Authorization: Bearer ${token}")
   if [[ -n "$data" ]]; then
-    curl -sk -X "$method" "https://127.0.0.1:${port}${path}" \
-      -H "Authorization: Bearer ${token}" \
-      -H "Content-Type: application/json" \
-      -d "$data"
-  else
-    curl -sk -X "$method" "https://127.0.0.1:${port}${path}" \
-      -H "Authorization: Bearer ${token}"
+    args+=(-H "Content-Type: application/json" -d "$data")
   fi
+  curl "${args[@]}"
 }
 
-for service in "${!INSTANCES[@]}"; do
-  port="${INSTANCES[$service]}"
+sync_instance() {
+  local service="$1" port="$2" token temp_pass users_json
   echo "=== ${service} (port ${port}) ==="
 
-  if ! sudo docker compose ps --status running "$service" 2>/dev/null | grep -q "$service"; then
-    echo "  skip: not running"
-    continue
+  if ! compose ps --status running "$service" 2>/dev/null | grep -q "$service"; then
+    echo "  ERROR: service is not running"
+    return 1
   fi
 
-  temp_pass="$(get_temp_admin_password "$service")"
-  if [[ -z "$temp_pass" ]]; then
-    echo "  skip: no temp admin password in logs (maybe already changed)"
-    temp_pass="${ADMIN_PASSWORD:-}"
-  fi
-  if [[ -z "$temp_pass" ]]; then
-    echo "  skip: set ADMIN_PASSWORD or reset admin via config"
-    continue
+  if ! wait_for_gateway "$port"; then
+    echo "  ERROR: authenticated gateway did not become ready"
+    return 1
   fi
 
-  token="$(login_token "$port" admin "$temp_pass" || true)"
-  if [[ -z "$token" && -n "$ADMIN_PASSWORD" && "$temp_pass" != "$ADMIN_PASSWORD" ]]; then
-    token="$(login_token "$port" admin "$ADMIN_PASSWORD" || true)"
-    temp_pass="$ADMIN_PASSWORD"
-  fi
+  token="$(login_token "$port" admin "$ADMIN_PASSWORD" || true)"
   if [[ -z "$token" ]]; then
-    echo "  error: admin login failed"
-    continue
-  fi
-
-  if [[ -n "$ADMIN_PASSWORD" && "$temp_pass" != "$ADMIN_PASSWORD" ]]; then
-    api PUT "$port" "$token" "/api/users/admin/password" "{\"password\":\"${ADMIN_PASSWORD}\"}" >/dev/null
+    temp_pass="$(get_temp_admin_password "$service" || true)"
+    if [[ -z "$temp_pass" ]]; then
+      echo "  ERROR: admin login failed and no temporary password was found"
+      return 1
+    fi
+    token="$(login_token "$port" admin "$temp_pass" || true)"
+    if [[ -z "$token" ]]; then
+      echo "  ERROR: temporary admin login failed"
+      return 1
+    fi
+    if ! api PUT "$port" "$token" "/api/users/admin/password" \
+      "{\"password\":\"${ADMIN_PASSWORD}\"}" >/dev/null; then
+      echo "  ERROR: could not set the admin password"
+      return 1
+    fi
     echo "  admin password updated"
-    token="$(login_token "$port" admin "$ADMIN_PASSWORD")"
+    token="$(login_token "$port" admin "$ADMIN_PASSWORD" || true)"
   fi
 
-  users_json="$(api GET "$port" "$token" "/api/users")"
-  if echo "$users_json" | grep -q "\"${VIEWER_USER}\""; then
-    api PUT "$port" "$token" "/api/users/${VIEWER_USER}/password" "{\"password\":\"${VIEWER_PASSWORD}\"}" >/dev/null
-    api PUT "$port" "$token" "/api/users/${VIEWER_USER}/role" "{\"role\":\"${VIEWER_ROLE}\"}" >/dev/null 2>/dev/null || true
-    echo "  viewer '${VIEWER_USER}' password/role synced"
+  if [[ -z "$token" ]]; then
+    echo "  ERROR: admin verification failed"
+    return 1
+  fi
+
+  if ! users_json="$(api GET "$port" "$token" "/api/users")"; then
+    echo "  ERROR: could not list users"
+    return 1
+  fi
+
+  if grep -q "\"${VIEWER_USER}\"" <<<"$users_json"; then
+    if ! api PUT "$port" "$token" "/api/users/${VIEWER_USER}/password" \
+      "{\"password\":\"${VIEWER_PASSWORD}\"}" >/dev/null; then
+      echo "  ERROR: could not update viewer password"
+      return 1
+    fi
+    if ! api PUT "$port" "$token" "/api/users/${VIEWER_USER}/role" \
+      "{\"role\":\"${VIEWER_ROLE}\"}" >/dev/null; then
+      echo "  ERROR: could not update viewer role"
+      return 1
+    fi
+    echo "  viewer '${VIEWER_USER}' password/role updated"
   else
-    api POST "$port" "$token" "/api/users" \
-      "{\"username\":\"${VIEWER_USER}\",\"password\":\"${VIEWER_PASSWORD}\",\"role\":\"${VIEWER_ROLE}\"}" >/dev/null
+    if ! api POST "$port" "$token" "/api/users" \
+      "{\"username\":\"${VIEWER_USER}\",\"password\":\"${VIEWER_PASSWORD}\",\"role\":\"${VIEWER_ROLE}\"}" >/dev/null; then
+      echo "  ERROR: could not create viewer '${VIEWER_USER}'"
+      return 1
+    fi
     echo "  viewer '${VIEWER_USER}' created"
+  fi
+
+  if [[ -z "$(login_token "$port" admin "$ADMIN_PASSWORD" || true)" ]]; then
+    echo "  ERROR: final admin login verification failed"
+    return 1
+  fi
+  if [[ -z "$(login_token "$port" "$VIEWER_USER" "$VIEWER_PASSWORD" || true)" ]]; then
+    echo "  ERROR: final viewer login verification failed"
+    return 1
+  fi
+
+  echo "  OK: admin and viewer logins verified"
+}
+
+failures=()
+for instance in "${INSTANCES[@]}"; do
+  service="${instance%%:*}"
+  port="${instance##*:}"
+  if ! sync_instance "$service" "$port"; then
+    failures+=("$service")
   fi
 done
 
-echo "done"
+if ((${#failures[@]} > 0)); then
+  echo "FAILED: ${failures[*]}" >&2
+  exit 1
+fi
+
+echo "All Frigate users synchronized and verified."

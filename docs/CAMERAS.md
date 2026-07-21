@@ -2,235 +2,128 @@
 
 # موجودی دوربین‌ها — cctv_izadshahr
 
-منبع حقیقت (source of truth) برای همه‌ی دوربین‌ها، IP، یوزر/رمز RTSP، و وضعیت
-استقرار. قبل از افزودن دوربین به هر `config.yml`، این فایل را بررسی کن.
+این فایل منبع حقیقت جانمایی دوربین‌هاست و با `config/*/config.yml` و
+`portal/js/sites.js` هماهنگ نگه داشته می‌شود.
 
-**یوزر/رمز پیش‌فرض IP و DVR کافه:** `admin` / `admin123`
+- یوزر RTSP همه دوربین‌های IP: `admin`
+- رمز عمومی دوربین‌های قدیمی و DVRها: `admin123`
+- رمز دوربین‌های جدید مشخص‌شده در جدول: `1259110@av` (در RTSP به‌شکل `1259110%40av`)
+- همه نمونه‌های دائمی `record.enabled: true` دارند؛ `temp` فقط برای بررسی زنده است.
+- رابط همه نمونه‌ها از gateway احراز هویت‌شده 8971 استفاده می‌کند.
 
-## راهنمای وضعیت
+## تخصیص نهایی
 
-| وضعیت | معنی |
-|--------|------|
-| `active` | الان در یک نمونه Frigate فعال است |
-| `planned` | در موجودی است، هنوز فعال نشده |
-| `offline` | آفلاین یا موقتاً غیرفعال در کانفیگ |
-| `duplicate_ip` | همان IP با نام دیگر هم وجود دارد — فقط یکی را فعال کن |
+| نمونه | پورت | تعداد | دوربین‌ها / محل |
+|---|---:|---:|---|
+| `cafe` | 8972 | 10 | DVR کافه ch1–8، `.52` نمای غربی کافه، `.49` ورودی کافه |
+| `center11` | 8973 | 7 | `.4,.5,.6,.9,.41`، پذیرش به پل `.134`، پذیرش به ساحل `.135` |
+| `restaurant` | 8975 | 9 | `.136,.137,.14,.13,.17,.18,.19,.81,.84` |
+| `sahel` | 8976 | 5 | `.54,.47,.48,.53,.16` |
+| `villa` | 8977 | 5 | `.51,.12,.20,.43,.44` |
+| `mahoote` | 8978 | 11 | `.10,.132,.24,.25,.27,.30,.31,.50,.71,.153,.203` |
+| `center22` | 8974 | 16 | DVR پارکینگ۴ ch1–3 و `.2,.8,.42,.45,.46,.82,.83,.86,.91,.92,.93,.94,.98` |
+| `tasisat` | 8980 | 5 | دیوار غربی محدوده تصفیه‌خانه فاضلاب و پشت لاله: `.61,.62,.63,.64,.65` |
+| `entezamat` | 8981 | 2 | `.3,.7` |
+| `anbar` | 8982 | 4 | DVR پارکینگ۴ ch4/ch5 (انبار مرکزی/خانه‌داری)، `.95` خانه‌داری، `.97` انبار |
+| `temp` | 8979 | 5 | `.21,.85,.88,.96` نیازمند بررسی تصویر؛ `.112` اتاق سرور، در انتظار دسته مستقل |
 
-## تخصیص فعلی به نمونه‌های Frigate
+### نام‌های دقیق هر نمونه
 
-ده نمونه‌ی دائمی + یک نمونه‌ی موقت، گروه‌بندی‌شده بر اساس محل. یوزر همه `admin`.
-رمز دو نوع است: `admin123` و `1259110@av` (در URLها `@` باید `%40` نوشته شود →
-`1259110%40av`). مسیر همه‌ی دوربین‌های IP: هایک‌ویژن `/Streaming/Channels/102`.
+| نمونه | نام‌های Frigate |
+|---|---|
+| `cafe` | `dvr_cafe_ch1` تا `dvr_cafe_ch8`, `view_cafe_gharb`, `vorodi_cafe` |
+| `center11` | `cam_4`, `cam_5`, `cam_6`, `cam_9`, `cam_41`, `paziresh_be_pol`, `paziresh_be_sahel` |
+| `restaurant` | `restoran_paeen`, `restoran_bala`, `restoran_sandogh`, `cam_13`, `cam_17`, `cam_18`, `cam_19`, `cam_81`, `cam_84` |
+| `sahel` | `sahel_shargh`, `sahel_gharb_47`, `sahel_gharb_48`, `view_cafe_shargh`, `sahel_kanex` |
+| `villa` | `villa_ha`, `villa_ha_gharb`, `cam_20`, `cam_43`, `cam_44` |
+| `mahoote` | `generator`, `parking_villa`, `cam_24`, `cam_25`, `cam_27`, `cam_30`, `cam_31`, `cam_50`, `cam_71`, `cam_153`, `cam_203` |
+| `center22` | `dvr_parking4_ch1` تا `ch3`, `cam_2`, `cam_8`, `cam_42`, `cam_45`, `cam_46`, `cam_82`, `cam_83`, `cam_86`, `cam_91` تا `cam_94`, `cam_98` |
+| `tasisat` | `cam_61` تا `cam_65` |
+| `entezamat` | `cam_3`, `cam_7` |
+| `anbar` | `dvr_parking4_ch4`, `dvr_parking4_ch5`, `cam_95`, `cam_97` |
+| `temp` | `cam_21`, `cam_85`, `cam_88`, `cam_96`, `cam_112` |
 
-| نمونه (service) | نقش | UI | فعال |
-|-----------------|-----|----|------|
-| **cafe** | کافه | 8972 | DVR ch1-8 + view_cafe_gharb(.52) + vorodi_cafe(.49) |
-| **center11** | پذیرش و ورودی مجتمع | 8973 | cam_4,5,6,9,41 + paziresh_be_pol(.134) + paziresh_be_sahel(.135) |
-| **restaurant** | رستوران | 8975 | restoran_paeen(.136) + restoran_bala(.137) + restoran_sandogh(.14) + cam_13(.13) + cam_18(.18) + cam_19(.19) + cam_31(.31) |
-| **sahel** | ساحل | 8976 | sahel_shargh(.54) + sahel_gharb_47(.47) + sahel_gharb_48(.48) + view_cafe_shargh(.53) + sahel_kanex(.16) |
-| **villa** | ویلاها | 8977 | villa_ha(.51) + villa_ha_gharb(.12) + cam_84(.84) + cam_20(.20) + cam_43(.43) + cam_44(.44) + cam_45(.45) |
-| **mahoote** | محوطه | 8978 | generator(.10) + parking_villa(.132) + cam_30,71,2,24,25,27,42,46,50,65,203 |
-| **center22** | پارکینگ | 8974 | dvr_parking4_ch1,2,3(.222) + cam_8,91,92,93,94 |
-| **anbar** | انبار | 8982 | انبار مرکزی/خانه‌داری: dvr_parking4_ch4,ch5(.222) + cam_97(.97) + cam_98(.98) |
-| **tasisat** | تاسیسات | 8980 | تسویه‌خانه: cam_81(.81)، cam_83(.83) — خشکشویی: cam_95(.95) |
-| **entezamat** | انتظامات | 8981 | cam_3(.3) + cam_7(.7) |
-| **temp** ⚠️موقت | بررسی دوربین‌ها | 8979 | ۶ دوربین باقی‌مانده (بدون تصویر/بدون مقصد) — بعداً حذف می‌شود |
+## DVRها
 
-> رمز `1259110@av`: `.134,.135,.136,.137,.51,.52,.53,.54,.47,.48,.49` (`.131`/shargh_vorodi حذف شد — کار نمی‌کرد)
-> رمز `admin123`: `.14,.12,.10,.132` (و همه‌ی cam_* مرکز و DVR کافه)
+### DVR کافه — `192.168.51.204`
 
-### center22 (پارکینگ)
-- DVR پارکینگ۴ (`192.168.51.222`) — ۵ کانال، فرمت `.sdp` (بخش ۴) — فعال
-- ❌ `ipcam_parking3_89` (.89) و `ipcam_parking3_90` (.90) **حذف شدند** — کار نمی‌کردند
+رمز `admin123` و مسیر ضبط `subtype=0` است. کانال‌های 1 تا 8 فعال‌اند:
 
-### ⚠️ نمونه موقت `temp` (پورت 8979) — فقط ۶ دوربین باقی مانده
-بیشتر دوربین‌ها شناسایی و به نمونه‌های دائمی منتقل شدند. این ۶ تا مانده‌اند:
-- **بدون تصویر / نیاز به بررسی:** `cam_21`, `cam_85`, `cam_88`, `cam_96` (در تست timeout می‌دادند)
-- **مقصد هنوز مشخص نشده:** `cam_82`, `cam_112`
+```text
+rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=<1-8>&subtype=0
+```
 
-بعد از تعیین تکلیف این ۶ تا، کل نمونه حذف می‌شود (سرویس `frigate-temp` + مسیر
-`/temp/` در nginx + کارت temp در sites.js + پوشه `config/temp`).
+کانال 10 فقط در موجودی `planned` است و در Frigate فعال نیست.
 
----
+### DVR پارکینگ۴ — `192.168.51.222`
 
-## ۱. کافه — DVR (`192.168.51.204`)
+رمز `admin123`؛ هر پنج کانال فعال‌اند. ch1–3 در `center22` و ch4–5 در
+`anbar` قرار دارند:
 
-DVR داهوا/مشابه — مسیر اصلی ضبط: `subtype=0`، ساب‌استریم: `subtype=1`
+```text
+rtsp://192.168.51.222:554/user=admin_password=admin123_channel=<1-5>_stream=0.sdp?real_stream
+```
 
-| نام | کانال | وضعیت | نمونه | RTSP (ضبط — subtype=0) |
-|-----|-------|--------|--------|-------------------------|
-| `dvr_cafe_ch1` | 1 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=1&subtype=0` |
-| `dvr_cafe_ch2` | 2 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=2&subtype=0` |
-| `dvr_cafe_ch3` | 3 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=3&subtype=0` |
-| `dvr_cafe_ch4` | 4 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=4&subtype=0` |
-| `dvr_cafe_ch5` | 5 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=5&subtype=0` |
-| `dvr_cafe_ch6` | 6 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=6&subtype=0` |
-| `dvr_cafe_ch7` | 7 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=7&subtype=0` |
-| `dvr_cafe_ch8` | 8 | **active** | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=8&subtype=0` |
-| `dvr_cafe_ch10` | 10 | planned | cafe | `rtsp://admin:admin123@192.168.51.204:554/cam/realmonitor?channel=10&subtype=0` |
+## دوربین‌های دارای رمز `1259110@av`
 
-> ch10 قبلاً اشتباه فعال بود؛ با ch3 جایگزین شد. ch10 برای آینده در موجودی مانده.
+| IP | نام | نمونه |
+|---|---|---|
+| `192.168.51.134` | `paziresh_be_pol` | center11 |
+| `192.168.51.135` | `paziresh_be_sahel` | center11 |
+| `192.168.51.136` | `restoran_paeen` | restaurant |
+| `192.168.51.137` | `restoran_bala` | restaurant |
+| `192.168.51.51` | `villa_ha` | villa |
+| `192.168.51.52` | `view_cafe_gharb` | cafe |
+| `192.168.51.53` | `view_cafe_shargh` | sahel |
+| `192.168.51.54` | `sahel_shargh` | sahel |
+| `192.168.51.47` | `sahel_gharb_47` | sahel |
+| `192.168.51.48` | `sahel_gharb_48` | sahel |
+| `192.168.51.49` | `vorodi_cafe` | cafe |
+| `192.168.51.50` | `cam_50` | mahoote |
 
----
+`.53` در فهرست ورودی با دو برچسب آمده بود؛ فقط یک دوربین است و طبق جانمایی
+فعلی `view_cafe_shargh` نگه داشته شد. `.54` دوربین `sahel_shargh` است.
 
-## ۲. کافه — دوربین IP
+## ممیزی فهرست اعلام‌شده
 
-| نام | IP | وضعیت | نمونه | RTSP ضبط | RTSP detect / یادداشت |
-|-----|-----|--------|--------|----------|------------------------|
-| ~~`ipcam_parking3_90`~~ | 192.168.51.90 | **حذف‌شده** | — | — | کار نمی‌کرد — حذف شد |
-| ~~`ipcam_parking3_89`~~ | 192.168.51.89 | **حذف‌شده** | — | — | timeout — حذف شد |
-| ~~`ipcam_ashpazkhane_99`~~ | 192.168.51.99 | **حذف‌شده** | — | — | H.265 / کار نمی‌کرد — حذف شد |
-| ~~`ipcam_rest_100`~~ | 192.168.51.100 | **حذف‌شده** | — | — | timeout — حذف شد |
-| ~~`ipcam_rest_101`~~ | 192.168.51.101 | **حذف‌شده** | — | — | timeout — حذف شد |
+### اضافه یا جابه‌جا شده در این اصلاح
 
----
+- رستوران: `.17` اضافه شد؛ `.81` و `.84` مطابق توضیح «بالای رستوران» منتقل شدند.
+- پارکینگ: `.86` اضافه شد؛ `.2,.42,.45,.46,.82,.83,.98` منتقل شدند.
+- تاسیسات: `.61,.62,.63,.64` اضافه و `.65` به این نمونه منتقل شد.
+- محوطه: `.153` اضافه و `.31` به دیوار شرقی منتقل شد.
+- انبار: `.95` طبق آخرین برچسب «خانه‌داری» منتقل شد.
+- `cam_112` اتاق سرور است و تا تصمیم درباره دسته مستقل در `temp` می‌ماند.
 
-## ۳. مرکز — دوربین IP (`192.168.51.0/24`)
+### عمداً حذف‌شده و دوباره فعال نشده
 
-مسیر استاندارد: `/Streaming/Channels/102` — یوزر: `admin` — رمز: `admin123`
+| IP | نام قبلی | علت |
+|---|---|---|
+| `192.168.51.131` | `shargh_vorodi` | کار نمی‌کرد؛ حذف صریح کاربر |
+| `192.168.51.89` | `ipcam_parking3_89` | timeout / بدون استریم |
+| `192.168.51.90` | `ipcam_parking3_90` | timeout / بدون استریم |
+| `192.168.51.99` | `ipcam_ashpazkhane_99` | بدون استریم قابل استفاده |
+| `192.168.51.100` | `ipcam_rest_100` | timeout |
+| `192.168.51.101` | `ipcam_rest_101` | timeout |
 
-### فعال در center11
+این موارد فقط با تأیید صریح و تست RTSP دوباره اضافه می‌شوند.
 
-| نام | IP | وضعیت | RTSP |
-|-----|-----|--------|------|
-| `cam_4` | 192.168.51.4 | **active** | `rtsp://admin:admin123@192.168.51.4:554/Streaming/Channels/102` |
-| `cam_5` | 192.168.51.5 | **active** | `rtsp://admin:admin123@192.168.51.5:554/Streaming/Channels/102` |
-| `cam_6` | 192.168.51.6 | **active** | `rtsp://admin:admin123@192.168.51.6:554/Streaming/Channels/102` |
-| `cam_9` | 192.168.51.9 | **active** | `rtsp://admin:admin123@192.168.51.9:554/Streaming/Channels/102` |
-| `cam_13` | 192.168.51.13 | **active** (restaurant) | `rtsp://admin:admin123@192.168.51.13:554/Streaming/Channels/102` — منتقل‌شده به نمونه restaurant |
-| `cam_41` | 192.168.51.41 | **active** | `rtsp://admin:admin123@192.168.51.41:554/Streaming/Channels/102` |
+### موارد تکراری که فقط یک‌بار فعال‌اند
 
-### آفلاین / غیرفعال موقت (center11)
+- `.14` فقط با نام `restoran_sandogh` در `restaurant` فعال است.
+- `.10` فقط با نام `generator` در `mahoote` فعال است.
+- `.12` فقط با نام `villa_ha_gharb` در `villa` فعال است.
+- `.41` و `.201` یک دوربین فیزیکی‌اند؛ فقط `cam_41` فعال است.
 
-| نام | IP | وضعیت | RTSP | یادداشت |
-|-----|-----|--------|------|---------|
-| `cam_14` | 192.168.51.14 | **duplicate_ip** | `rtsp://admin:admin123@192.168.51.14:554/Streaming/Channels/102` | همان IP الان به‌نام `restoran_sandogh` در نمونه restaurant **فعال** است — cam_14 را دوباره فعال نکن |
-| ~~`cam_16`~~ | 192.168.51.16 | **active** (sahel) | `rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102` | حالا به‌نام `sahel_kanex` در نمونه sahel فعال است |
+## شمارش نهایی
 
-### وضعیت دوربین‌های pool مرکز (پس از شناسایی در temp)
-
-> 📌 **بیشتر این دوربین‌ها شناسایی و توزیع شدند** — تخصیص نهایی در جدول بالای صفحه است. خلاصه:
-> - **محوطه:** cam_2, 24, 25, 27, 30, 42, 46, 50, 65, 71, 203
-> - **ویلا:** cam_20, 43, 44, 45, 84
-> - **پارکینگ (center22):** cam_8, 91, 92, 93, 94
-> - **انبار (anbar):** cam_97, 98 + dvr_parking4_ch4, ch5
-> - **رستوران:** cam_18, 19, 31
-> - **تاسیسات:** cam_81, 83 (تسویه‌خانه)، cam_95 (خشکشویی)
-> - **انتظامات:** cam_3, 7
-> - **مانده در temp (بررسی/بدون مقصد):** cam_21, 85, 88, 96 (بدون تصویر) و cam_82, 112
-> - `cam_50` رمزش `1259110@av` است (بقیه admin123).
-> ⚠️ `cam_10, cam_12, cam_47` و ... با نام دیگر فعال‌اند (جدول IPهای تکراری، بخش ۵).
-> (جدول‌های تفصیلی زیر برای مرجع IP/RTSP نگه داشته شده‌اند.)
-
-| نام | IP | RTSP |
-|-----|-----|------|
-| ~~`cam_10`~~ | 192.168.51.10 | فعال به‌نام `generator` در mahoote |
-| ~~`cam_12`~~ | 192.168.51.12 | فعال به‌نام `villa_ha_gharb` در villa |
-| `cam_30` | 192.168.51.30 | `rtsp://admin:admin123@192.168.51.30:554/Streaming/Channels/102` |
-| ~~`cam_47`~~ | 192.168.51.47 | فعال به‌نام `sahel_gharb_47` در sahel |
-| `cam_71` | 192.168.51.71 | `rtsp://admin:admin123@192.168.51.71:554/Streaming/Channels/102` |
-| `cam_84` | 192.168.51.84 | `rtsp://admin:admin123@192.168.51.84:554/Streaming/Channels/102` |
-| `cam_112` | 192.168.51.112 | `rtsp://admin:admin123@192.168.51.112:554/Streaming/Channels/102` |
-
-### جدید — هنوز فعال نشده (planned)
-
-| نام | IP | RTSP |
-|-----|-----|------|
-| `cam_2` | 192.168.51.2 | `rtsp://admin:admin123@192.168.51.2:554/Streaming/Channels/102` |
-| `cam_3` | 192.168.51.3 | `rtsp://admin:admin123@192.168.51.3:554/Streaming/Channels/102` |
-| `cam_7` | 192.168.51.7 | `rtsp://admin:admin123@192.168.51.7:554/Streaming/Channels/102` |
-| `cam_8` | 192.168.51.8 | `rtsp://admin:admin123@192.168.51.8:554/Streaming/Channels/102` |
-| `cam_18` | 192.168.51.18 | `rtsp://admin:admin123@192.168.51.18:554/Streaming/Channels/102` |
-| `cam_19` | 192.168.51.19 | `rtsp://admin:admin123@192.168.51.19:554/Streaming/Channels/102` |
-| `cam_20` | 192.168.51.20 | `rtsp://admin:admin123@192.168.51.20:554/Streaming/Channels/102` |
-| `cam_21` | 192.168.51.21 | `rtsp://admin:admin123@192.168.51.21:554/Streaming/Channels/102` |
-| `cam_24` | 192.168.51.24 | `rtsp://admin:admin123@192.168.51.24:554/Streaming/Channels/102` |
-| `cam_25` | 192.168.51.25 | `rtsp://admin:admin123@192.168.51.25:554/Streaming/Channels/102` |
-| `cam_27` | 192.168.51.27 | `rtsp://admin:admin123@192.168.51.27:554/Streaming/Channels/102` |
-| `cam_31` | 192.168.51.31 | `rtsp://admin:admin123@192.168.51.31:554/Streaming/Channels/102` |
-| `cam_42` | 192.168.51.42 | `rtsp://admin:admin123@192.168.51.42:554/Streaming/Channels/102` |
-| `cam_43` | 192.168.51.43 | `rtsp://admin:admin123@192.168.51.43:554/Streaming/Channels/102` |
-| `cam_44` | 192.168.51.44 | `rtsp://admin:admin123@192.168.51.44:554/Streaming/Channels/102` |
-| `cam_45` | 192.168.51.45 | `rtsp://admin:admin123@192.168.51.45:554/Streaming/Channels/102` |
-| `cam_46` | 192.168.51.46 | `rtsp://admin:admin123@192.168.51.46:554/Streaming/Channels/102` |
-| ~~`cam_48`~~ | 192.168.51.48 | فعال به‌نام `sahel_gharb_48` در sahel |
-| ~~`cam_49`~~ | 192.168.51.49 | فعال به‌نام `vorodi_cafe` در cafe |
-| `cam_50` | 192.168.51.50 | `rtsp://admin:admin123@192.168.51.50:554/Streaming/Channels/102` |
-| ~~`cam_51`~~ | 192.168.51.51 | فعال به‌نام `villa_ha` در villa |
-| ~~`cam_52`~~ | 192.168.51.52 | فعال به‌نام `view_cafe_gharb` در cafe |
-| ~~`cam_53`~~ | 192.168.51.53 | فعال به‌نام `view_cafe_shargh` در sahel |
-| ~~`cam_54`~~ | 192.168.51.54 | فعال به‌نام `sahel_shargh` در sahel |
-| `cam_65` | 192.168.51.65 | `rtsp://admin:admin123@192.168.51.65:554/Streaming/Channels/102` |
-| `cam_81` | 192.168.51.81 | `rtsp://admin:admin123@192.168.51.81:554/Streaming/Channels/102` |
-| `cam_82` | 192.168.51.82 | `rtsp://admin:admin123@192.168.51.82:554/Streaming/Channels/102` |
-| `cam_83` | 192.168.51.83 | `rtsp://admin:admin123@192.168.51.83:554/Streaming/Channels/102` |
-| `cam_85` | 192.168.51.85 | `rtsp://admin:admin123@192.168.51.85:554/Streaming/Channels/102` |
-| `cam_88` | 192.168.51.88 | `rtsp://admin:admin123@192.168.51.88:554/Streaming/Channels/102` |
-| `cam_90` | 192.168.51.90 | `rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102` — planned (ipcam_parking3_90 حذف شد؛ در temp نیست) |
-| `cam_91` | 192.168.51.91 | `rtsp://admin:admin123@192.168.51.91:554/Streaming/Channels/102` |
-| `cam_92` | 192.168.51.92 | `rtsp://admin:admin123@192.168.51.92:554/Streaming/Channels/102` |
-| `cam_93` | 192.168.51.93 | `rtsp://admin:admin123@192.168.51.93:554/Streaming/Channels/102` |
-| `cam_94` | 192.168.51.94 | `rtsp://admin:admin123@192.168.51.94:554/Streaming/Channels/102` |
-| `cam_95` | 192.168.51.95 | `rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102` |
-| `cam_96` | 192.168.51.96 | `rtsp://admin:admin123@192.168.51.96:554/Streaming/Channels/102` |
-| `cam_97` | 192.168.51.97 | `rtsp://admin:admin123@192.168.51.97:554/Streaming/Channels/102` |
-| `cam_98` | 192.168.51.98 | `rtsp://admin:admin123@192.168.51.98:554/Streaming/Channels/102` |
-| `cam_203` | 192.168.51.203 | `rtsp://admin:admin123@192.168.51.203:554/Streaming/Channels/102` |
-
-> `cam_201` (`.201`) همان دوربین فیزیکی `cam_41` (`.41`) است — **تکراری**؛ فقط `cam_41` فعال است.
-
----
-
-## ۴. پارکینگ ۴ — DVR (`192.168.51.222`)
-
-۵ کانال — انبار مرکزی + انبار خانه‌داری — هنوز فعال نشده (planned → center22)
-
-یوزر: `admin` — رمز: `admin123` — فرمت URL متفاوت از DVR کافه:
-
-| نام پیشنهادی | کانال | محل | وضعیت | RTSP |
-|--------------|-------|-----|--------|------|
-| `dvr_parking4_ch1` | 1 | پارکینگ۴ | **active** (center22) | `rtsp://192.168.51.222:554/user=admin_password=admin123_channel=1_stream=0.sdp?real_stream` |
-| `dvr_parking4_ch2` | 2 | پارکینگ۴ | **active** (center22) | `rtsp://192.168.51.222:554/user=admin_password=admin123_channel=2_stream=0.sdp?real_stream` |
-| `dvr_parking4_ch3` | 3 | پارکینگ۴ | **active** (center22) | `rtsp://192.168.51.222:554/user=admin_password=admin123_channel=3_stream=0.sdp?real_stream` |
-| `dvr_parking4_ch4` | 4 | انبار مرکزی | **active** (anbar) | `rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream` |
-| `dvr_parking4_ch5` | 5 | انبار خانه‌داری | **active** (anbar) | `rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream` |
-
----
-
-## ۵. IPهای تکراری (هشدار)
-
-| IP | نام ۱ | نام ۲ | تصمیم |
-|----|--------|--------|--------|
-| `192.168.51.41` / `.201` | `cam_41` | `cam_201` | **همان دوربین** — فقط `cam_41` فعال |
-| `192.168.51.90` | `cam_90` (مرکز) | `ipcam_parking3_90` (حذف‌شده) | فقط `cam_90` باقی مانده (planned) |
-| `192.168.51.10` | `cam_10` (planned) | `generator` (mahoote) | **generator فعال است** — cam_10 را اضافه نکن |
-| `192.168.51.12` | `cam_12` (planned) | `villa_ha_gharb` (villa) | **villa_ha_gharb فعال است** |
-| `192.168.51.14` | `cam_14` (قبلاً offline در center11) | `restoran_sandogh` (restaurant) | **restoran_sandogh فعال است** — cam_14 را دوباره فعال نکن |
-| `192.168.51.47` | `cam_47` (planned) | `sahel_gharb_47` (sahel) | **sahel_gharb_47 فعال است** |
-| `192.168.51.48` | `cam_48` (planned) | `sahel_gharb_48` (sahel) | **sahel_gharb_48 فعال است** |
-| `192.168.51.49` | `cam_49` (planned) | `vorodi_cafe` (cafe) | **vorodi_cafe فعال است** |
-| `192.168.51.51` | `cam_51` (planned) | `villa_ha` (villa) | **villa_ha فعال است** |
-| `192.168.51.52` | `cam_52` (planned) | `view_cafe_gharb` (cafe) | **view_cafe_gharb فعال است** |
-| `192.168.51.53` | `cam_53` (planned) | `view_cafe_shargh` (sahel) | **view_cafe_shargh فعال است** |
-| `192.168.51.54` | `cam_54` (planned) | `sahel_shargh` (sahel) | **sahel_shargh فعال است** |
-
----
-
-## ۶. آمار
-
-| دسته | تعداد |
-|------|--------|
-| DVR کافه (کل کانال‌ها) | 9 (۸ فعال + ch10 planned) |
-| IP کافه (ipcam_rest/parking3/ashpazkhane) | 5 (**همه حذف شدند** — کار نمی‌کردند) |
-| IP مرکز فعال (center11 + sahel_kanex) | 7 (cam_4,5,6,9,41 + cam_13→restaurant + sahel_kanex/.16) |
-| IP مرکز توزیع‌شده (محوطه/ویلا/پارکینگ/انبار/رستوران/تاسیسات/انتظامات) | 31 (فعال) |
-| IP مرکز مانده در `temp` | 6 (۴ بدون تصویر + cam_82، cam_112) |
-| DVR پارکینگ۴ | 5 (ch1-3 در center22، ch4-5/انبار در anbar) |
-
-> **شمارش نهایی (هماهنگ با `portal/js/sites.js` → `CAMERA_INVENTORY`):**
-> - فعال در نمونه‌های دائمی: **۶۶** (cafe 10 + center11 7 + restaurant 7 + sahel 5 + villa 7 + mahoote 13 + center22 8 + anbar 4 + tasisat 3 + entezamat 2)
-> - در نمونه موقت `temp` (بررسی): **۶**
-> - planned باقی‌مانده: `dvr_cafe_ch10` (۱)
-> - **مجموع = ۷۳** — inactive = ۷ (۶ temp + ch10) — broken = ۰
+| وضعیت | تعداد |
+|---|---:|
+| فعال در ۱۰ نمونه دائمی | **74** |
+| در نمونه موقت `temp` | **5** |
+| planned (فقط DVR کافه ch10) | **1** |
+| مجموع موجودی کارت پرتال | **80** |
+| inactive در پرتال | **6** |
+| broken | **0** |
 
 </div>

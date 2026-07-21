@@ -1,9 +1,7 @@
-# villa = ویلاها. Record-only NVR. Camera RTSP password inline in URLs.
+# villa = ویلاها. Record-only NVR.
 mqtt:
   enabled: false
 
-# Portal proxies over plain HTTP (port 8888) — cookie must NOT be Secure,
-# and 30-day sessions so the UI stops asking for the password every day.
 auth:
   cookie_secure: false
   session_length: 2592000
@@ -31,66 +29,27 @@ ffmpeg:
 
 go2rtc:
   streams:
-    # villa_ha: password 1259110@av (@ encoded as %40 in URL)
     villa_ha:
       - rtsp://admin:1259110%40av@192.168.51.51:554/Streaming/Channels/102
-    # villa_ha_gharb: password admin123
     villa_ha_gharb:
       - rtsp://admin:admin123@192.168.51.12:554/Streaming/Channels/102
-    # --- شناسایی‌شده در temp و منتقل‌شده به ویلا (password admin123) ---
-    cam_84:
-      - rtsp://admin:admin123@192.168.51.84:554/Streaming/Channels/102
     cam_20:
       - rtsp://admin:admin123@192.168.51.20:554/Streaming/Channels/102
     cam_43:
       - rtsp://admin:admin123@192.168.51.43:554/Streaming/Channels/102
     cam_44:
       - rtsp://admin:admin123@192.168.51.44:554/Streaming/Channels/102
-    cam_45:
-      - rtsp://admin:admin123@192.168.51.45:554/Streaming/Channels/102
 
 cameras:
   villa_ha:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/villa_ha
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/villa_ha, input_args: preset-rtsp-restream, roles: [record] }] }
   villa_ha_gharb:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/villa_ha_gharb
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_84:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_84
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/villa_ha_gharb, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_20:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_20
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_20, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_43:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_43
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_43, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_44:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_44
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_45:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_45
-          input_args: preset-rtsp-restream
-          roles: [record]
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_44, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

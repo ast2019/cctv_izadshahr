@@ -33,10 +33,10 @@ const SITES = [
     slug: "restaurant",
     title: "رستوران",
     titleEn: "Restaurant",
-    description: "دوربین‌های رستوران (بالا، پایین، صندوق و ...)",
+    description: "رستوران، آشپزخانه، سردخانه و دوربین‌های بیرونی رستوران",
     icon: "🍽️",
     port: 8975,
-    cameraCount: 7,
+    cameraCount: 9,
     enabled: true,
     healthPath: "/health/restaurant/",
     apiPath: "/restaurant/api/",
@@ -61,10 +61,10 @@ const SITES = [
     slug: "villa",
     title: "ویلاها",
     titleEn: "Villas",
-    description: "دوربین‌های ویلاها",
+    description: "دوربین‌های ویلاها و جلوی ارکیده",
     icon: "🏠",
     port: 8977,
-    cameraCount: 7,
+    cameraCount: 5,
     enabled: true,
     healthPath: "/health/villa/",
     apiPath: "/villa/api/",
@@ -75,10 +75,10 @@ const SITES = [
     slug: "mahoote",
     title: "محوطه",
     titleEn: "Grounds",
-    description: "دوربین‌های محوطه (ژنراتور و ...)",
+    description: "محوطه، ژنراتور و دیوار شرقی",
     icon: "🌳",
     port: 8978,
-    cameraCount: 13,
+    cameraCount: 11,
     enabled: true,
     healthPath: "/health/mahoote/",
     apiPath: "/mahoote/api/",
@@ -89,10 +89,10 @@ const SITES = [
     slug: "center22",
     title: "پارکینگ",
     titleEn: "Parking",
-    description: "دوربین‌های پارکینگ",
+    description: "پارکینگ‌های ۱ تا ۴ و موتورخانه پارکینگ ۱",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 8,
+    cameraCount: 16,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
@@ -103,10 +103,10 @@ const SITES = [
     slug: "tasisat",
     title: "تاسیسات",
     titleEn: "Facilities",
-    description: "تسویه‌خانه (cam_81، cam_83) و خشکشویی (cam_95)",
+    description: "دیوار غربی؛ تصفیه‌خانه فاضلاب و پشت لاله (cam_61 تا cam_65)",
     icon: "⚙️",
     port: 8980,
-    cameraCount: 3,
+    cameraCount: 5,
     enabled: true,
     healthPath: "/health/tasisat/",
     apiPath: "/tasisat/api/",
@@ -131,7 +131,7 @@ const SITES = [
     slug: "anbar",
     title: "انبار",
     titleEn: "Warehouse",
-    description: "انبار مرکزی و خانه‌داری (DVR) + cam_97، cam_98",
+    description: "انبار مرکزی، خانه‌داری (DVR و cam_95) و cam_97",
     icon: "📦",
     port: 8982,
     cameraCount: 4,
@@ -146,10 +146,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۶ دوربین باقی‌مانده (۴ بدون تصویر + cam_82، cam_112 بدون مقصد)",
+    description: "۵ دوربین باقی‌مانده (۴ بدون تصویر + cam_112 اتاق سرور)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 6,
+    cameraCount: 5,
     enabled: true,
     temporary: true,
     healthPath: "/health/temp/",
@@ -162,12 +162,11 @@ const SITES = [
  * Inventory overview (docs/CAMERAS.md).
  * total = همه دوربین‌های شناخته‌شده
  * inactive = هنوز فعال نشده / planned
- * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است (فقط cam_16 —
- *          cam_14 با نام restoran_sandogh در نمونه restaurant فعال شد)
+ * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=66 در نمونه‌های دائمی + temp=6 (در حال بررسی) + ch10 planned=1
-  total: 73,
-  inactive: 7, // 6 در نمونه موقت temp + dvr_cafe_ch10
-  broken: 0, // خراب‌ها حذف شدند
+  // active=74 در نمونه‌های دائمی + temp=5 (در حال بررسی) + ch10 planned=1
+  total: 80,
+  inactive: 6, // 5 در نمونه موقت temp + dvr_cafe_ch10
+  broken: 0, // خراب‌ها عمداً حذف شدند
 };

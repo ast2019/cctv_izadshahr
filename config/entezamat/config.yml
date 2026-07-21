@@ -2,10 +2,11 @@
 mqtt:
   enabled: false
 
-# نمونه‌ی داخلی — احراز هویت خاموش تا بدون لاگین باز شود و پرتال آمارش را بخواند
-# (مثل نمونه‌ی temp). کاربرهایش با پرتال sync نشده‌اند؛ فقط شبکه‌ی داخلی.
+# Portal proxies the authenticated Frigate gateway (8971).
 auth:
-  enabled: false
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
 
 detect:
   enabled: false

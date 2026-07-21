@@ -1,14 +1,12 @@
-# tasisat = تاسیسات. Record-only NVR. Camera RTSP password inline in URLs.
-# محتوای این نمونه:
-#   - تسویه‌خانه: cam_81 (.81) و cam_83 (.83)
-#   - خشکشویی:   cam_95 (.95)
+# tasisat = تاسیسات. Record-only NVR.
+# دیوار غربی در محدوده تصفیه‌خانه فاضلاب و پشت لاله: cam_61 تا cam_65.
 mqtt:
   enabled: false
 
-# نمونه‌ی داخلی — احراز هویت خاموش تا بدون لاگین باز شود و پرتال آمارش را بخواند
-# (مثل نمونه‌ی temp). کاربرهایش با پرتال sync نشده‌اند؛ فقط شبکه‌ی داخلی.
 auth:
-  enabled: false
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
 
 detect:
   enabled: false
@@ -32,33 +30,28 @@ ffmpeg:
 
 go2rtc:
   streams:
-    # تسویه‌خانه — password admin123
-    cam_81:
-      - rtsp://admin:admin123@192.168.51.81:554/Streaming/Channels/102
-    cam_83:
-      - rtsp://admin:admin123@192.168.51.83:554/Streaming/Channels/102
-    # خشکشویی — password admin123
-    cam_95:
-      - rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102
+    # دیوار غربی — تصفیه‌خانه فاضلاب و پشت لاله (password admin123)
+    cam_61:
+      - rtsp://admin:admin123@192.168.51.61:554/Streaming/Channels/102
+    cam_62:
+      - rtsp://admin:admin123@192.168.51.62:554/Streaming/Channels/102
+    cam_63:
+      - rtsp://admin:admin123@192.168.51.63:554/Streaming/Channels/102
+    cam_64:
+      - rtsp://admin:admin123@192.168.51.64:554/Streaming/Channels/102
+    cam_65:
+      - rtsp://admin:admin123@192.168.51.65:554/Streaming/Channels/102
 
 cameras:
-  cam_81:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_81
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_83:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_83
-          input_args: preset-rtsp-restream
-          roles: [record]
-  cam_95:
-    ffmpeg:
-      inputs:
-        - path: rtsp://127.0.0.1:8554/cam_95
-          input_args: preset-rtsp-restream
-          roles: [record]
+  cam_61:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_61, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_62:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_62, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_63:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_63, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_64:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_64, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_65:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_65, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0
