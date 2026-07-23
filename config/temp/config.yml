@@ -4,6 +4,7 @@
 # برگردانده‌شده برای بررسی مجدد (قبلاً به‌عنوان خراب حذف شده بودند):
 #   cam_89, cam_90 (پارکینگ۳)، cam_99 (ظرف‌شویی/آشپزخانه)،
 #   cam_100 (درب پشت رستوران)، cam_101 (ورودی رستوران)
+# منتقل‌شده برای بررسی: cam_95 (خانه‌داری، از anbar)
 # (cam_112 اتاق سرور منتقل شد به center11/پذیرش.)
 # بعد از تعیین تکلیف این دوربین‌ها، کل نمونه temp حذف می‌شود.
 # =============================================================================
@@ -54,6 +55,9 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/102
     cam_101:
       - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/102
+    # خانه‌داری — منتقل‌شده از anbar برای بررسی (password admin123)
+    cam_95:
+      - rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102
 
 cameras:
   cam_21:
@@ -74,5 +78,7 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_100, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_101:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_101, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_95:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_95, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

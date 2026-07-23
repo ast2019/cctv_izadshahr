@@ -1,5 +1,6 @@
 # anbar = انبار. Record-only NVR. جدا از پارکینگ (center22).
-# انبار مرکزی و خانه‌داری روی DVR .222، انبار IP روی .97 و خانه‌داری روی .95.
+# انبار مرکزی و خانه‌داری روی DVR .222، انبار IP روی .97.
+# cam_95 (خانه‌داری) به temp منتقل شد برای بررسی (به‌درخواست کاربر).
 mqtt:
   enabled: false
 
@@ -34,8 +35,6 @@ go2rtc:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream
     dvr_parking4_ch5:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
-    cam_95:
-      - rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102
     cam_97:
       - rtsp://admin:admin123@192.168.51.97:554/Streaming/Channels/102
 
@@ -44,8 +43,6 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch4, input_args: preset-rtsp-restream, roles: [record] }] }
   dvr_parking4_ch5:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch5, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_95:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_95, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_97:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_97, input_args: preset-rtsp-restream, roles: [record] }] }
 

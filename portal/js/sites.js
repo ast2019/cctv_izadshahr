@@ -133,10 +133,10 @@ const SITES = [
     slug: "anbar",
     title: "انبار",
     titleEn: "Warehouse",
-    description: "انبار مرکزی، خانه‌داری (DVR و cam_95) و cam_97",
+    description: "انبار مرکزی و خانه‌داری (DVR) + cam_97",
     icon: "📦",
     port: 8982,
-    cameraCount: 4,
+    cameraCount: 3,
     enabled: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/anbar/",
@@ -149,10 +149,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۹ دوربین برای بررسی (۴ بدون تصویر + ۵ برگردانده‌شده)",
+    description: "۱۰ دوربین برای بررسی (بدون تصویر + برگردانده‌شده + خانه‌داری)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 9,
+    cameraCount: 10,
     enabled: true,
     temporary: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
@@ -169,8 +169,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=75 در نمونه‌های دائمی + temp=9 (در حال بررسی) + ch10 planned=1
+  // active=74 در نمونه‌های دائمی + temp=10 (در حال بررسی) + ch10 planned=1
   total: 85,
-  inactive: 10, // 9 در نمونه موقت temp + dvr_cafe_ch10
+  inactive: 11, // 10 در نمونه موقت temp + dvr_cafe_ch10
   broken: 0, // در حال بررسی در نمونه temp
 };
