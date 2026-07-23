@@ -146,10 +146,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۴ دوربین باقی‌مانده بدون تصویر — نیازمند بررسی",
+    description: "۹ دوربین برای بررسی (۴ بدون تصویر + ۵ برگردانده‌شده)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 4,
+    cameraCount: 9,
     enabled: true,
     temporary: true,
     healthPath: "/health/temp/",
@@ -165,8 +165,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=75 در نمونه‌های دائمی + temp=4 (در حال بررسی) + ch10 planned=1
-  total: 80,
-  inactive: 5, // 4 در نمونه موقت temp + dvr_cafe_ch10
-  broken: 0, // خراب‌ها عمداً حذف شدند
+  // active=75 در نمونه‌های دائمی + temp=9 (در حال بررسی) + ch10 planned=1
+  total: 85,
+  inactive: 10, // 9 در نمونه موقت temp + dvr_cafe_ch10
+  broken: 0, // در حال بررسی در نمونه temp
 };
