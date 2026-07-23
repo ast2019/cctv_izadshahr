@@ -9,6 +9,7 @@ auth:
 
 detect:
   enabled: false
+  fps: 3
 
 record:
   enabled: true

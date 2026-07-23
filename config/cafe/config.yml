@@ -11,6 +11,9 @@ auth:
 
 detect:
   enabled: false
+  # NVR فقط ضبط است؛ Frigate مجبور است یک استریم را برای motion/API دیکود کند.
+  # fps پایین بار دیکود را کم می‌کند (ضبط با -c copy مستقل و دست‌نخورده است).
+  fps: 3
 
 record:
   enabled: true
