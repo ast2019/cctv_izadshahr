@@ -27,6 +27,21 @@ inclusion: always
 
 ## هماهنگی
 
-بعد از هر تغییر دوربین، این‌ها را همگام نگه دار: `config/*/config.yml`،
+بعد از هر تغییر دوربین، این‌ها را همگام نگه دار: `config/<site>/config.yml`،
 `portal/js/sites.js` (شمارش و `CAMERA_INVENTORY`)، `docs/CAMERAS.md`، و نسخه‌ی
 پرتال در `changelog.js`/`sw.js`/`index.html`.
+
+همچنین نقشه‌ی IP پنل ادمین را بازتولید کن (منبع واحد = کانفیگ‌ها):
+
+```bash
+python3 scripts/gen-camera-ip-map.py           # بازتولید portal/js/camera-ip-map.js
+python3 scripts/gen-camera-ip-map.py --check    # در اعتبارسنجی: مطمئن شو out of date نیست
+```
+
+فایل `portal/js/camera-ip-map.js` تولیدشده است و نباید دستی ویرایش شود.
+
+## احراز هویت پرتال
+
+- رمزها در `portal/js/auth-config.js` نگهداری **نمی‌شوند** (فقط username). هر کاربر
+  رمز خودش را در فرم می‌زند و پرتال آن را برای اعتبارسنجی به Frigate می‌فرستد.
+- دکمه‌های ورود سریع (quick-login) حذف شده‌اند و نباید برگردانده شوند.

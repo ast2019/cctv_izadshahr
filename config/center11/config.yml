@@ -38,8 +38,7 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.6:554/Streaming/Channels/102
     cam_9:
       - rtsp://admin:admin123@192.168.51.9:554/Streaming/Channels/102
-    # cam_16: offline — disabled temporarily
-    #   - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
+    # cam_16 (.16) منتقل شد به entezamat (sahel_kanex قبلی) — اینجا نیست.
     # cam_14 (.14): DO NOT re-enable — same camera is now active as
     # restoran_sandogh in config/restaurant/config.yml
     # cam_13 moved to restaurant (رستوران) — was misgrouped under reception
@@ -76,7 +75,7 @@ cameras:
         - path: rtsp://127.0.0.1:8554/cam_9
           input_args: preset-rtsp-restream
           roles: [record]
-  # cam_16: offline — disabled temporarily
+  # cam_16: منتقل شد به entezamat — do not re-enable here
   # cam_14: now active as restoran_sandogh in restaurant — do not re-enable here
   # cam_13 moved to restaurant
   cam_41:

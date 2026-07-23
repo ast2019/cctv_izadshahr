@@ -695,6 +695,52 @@ body {
   cursor: pointer;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.admin-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-tab.is-active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: var(--text);
+}
+
+.admin-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.admin-search::placeholder {
+  color: var(--text-muted);
+}
+
 .admin-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
@@ -900,35 +946,6 @@ body {
 
 .show-pass-label input[type="checkbox"]:checked::after {
   transform: rotate(-45deg) scale(1);
-}
-
-.login-quick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.75rem 0 0.5rem;
-}
-
-.btn-quick {
-  flex: 1;
-  min-width: 140px;
-  padding: 0.55rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btn-quick:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.btn-quick--admin {
-  border-color: rgba(230, 0, 0, 0.35);
 }
 
 .login-box label {
@@ -1150,7 +1167,6 @@ body {
 
 .btn-primary,
 .btn-logout,
-.btn-quick,
 .card {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -1267,15 +1283,6 @@ body {
     width: 100%;
     border-radius: 18px 18px 0 0;
     padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
-  }
-
-  .login-quick {
-    flex-direction: column;
-  }
-
-  .btn-quick {
-    min-height: 44px;
-    width: 100%;
   }
 
   .system-status {

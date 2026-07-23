@@ -4,13 +4,21 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.6.18";
+const PORTAL_VERSION = "1.6.19";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-07-21",
+    version: "1.6.19",
+    items: [
+      "پنل مدیریت: بخش دوربین‌های خراب و تاریخچه رویدادها تب‌بندی شد و جستجوی IP/نام اضافه شد",
+      "حذف دکمه‌های ورود سریع ویور/ادمین — هر کاربر با نام و رمز خودش وارد می‌شود",
+    ],
+  },
   {
     date: "2026-07-21",
     version: "1.6.18",

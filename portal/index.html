@@ -14,8 +14,8 @@
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/fonts.css?v=1.6.18" />
-  <link rel="stylesheet" href="css/main.css?v=1.6.18" />
+  <link rel="stylesheet" href="css/fonts.css?v=1.6.19" />
+  <link rel="stylesheet" href="css/main.css?v=1.6.19" />
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -77,7 +77,7 @@
         </svg>
       </div>
       <h2>ورود به سیستم</h2>
-      <p class="login-hint">یک‌بار وارد شوید — همه بخش‌ها باز می‌شوند</p>
+      <p class="login-hint">با نام کاربری و رمز خودتان وارد شوید — همه بخش‌ها باز می‌شوند</p>
       <form id="login-form" autocomplete="off">
         <label>
           نام کاربری
@@ -91,7 +91,6 @@
           <input type="checkbox" id="show-password" />
           <span>نمایش رمز</span>
         </label>
-        <div class="login-quick" id="login-quick"></div>
         <p id="login-error" class="login-error" role="alert"></p>
         <button type="submit" class="btn-primary">ورود</button>
       </form>
@@ -114,13 +113,15 @@
       </div>
 
       <div class="admin-block">
-        <h3>دوربین‌های خراب / قطع‌شده (وضعیت فعلی)</h3>
-        <div id="admin-broken"></div>
-      </div>
-
-      <div class="admin-block">
-        <h3>تاریخچه رویداد دوربین‌ها</h3>
-        <div id="admin-cam-events"></div>
+        <h3>وضعیت و تاریخچه دوربین‌ها</h3>
+        <div class="admin-tabs" role="tablist">
+          <button type="button" class="admin-tab is-active" data-cam-tab="broken">خراب / قطع‌شده</button>
+          <button type="button" class="admin-tab" data-cam-tab="events">تاریخچه رویدادها</button>
+        </div>
+        <input type="search" id="admin-cam-search" class="admin-search" dir="ltr"
+               placeholder="جستجو: IP، نام دوربین یا بخش…" aria-label="جستجوی دوربین بر اساس IP یا نام" />
+        <div id="admin-broken" data-cam-panel="broken"></div>
+        <div id="admin-cam-events" data-cam-panel="events" hidden></div>
       </div>
     </section>
 
@@ -161,14 +162,15 @@
     </footer>
   </main>
 
-  <script src="js/changelog.js?v=1.6.18"></script>
-  <script src="js/auth-config.js?v=1.6.18"></script>
-  <script src="js/sites.js?v=1.6.18"></script>
-  <script src="js/changelog-ui.js?v=1.6.18"></script>
-  <script src="js/load-monitor.js?v=1.6.18"></script>
-  <script src="js/admin-panel.js?v=1.6.18"></script>
-  <script src="js/ambiance.js?v=1.6.18"></script>
-  <script src="js/app.js?v=1.6.18"></script>
+  <script src="js/changelog.js?v=1.6.19"></script>
+  <script src="js/auth-config.js?v=1.6.19"></script>
+  <script src="js/sites.js?v=1.6.19"></script>
+  <script src="js/changelog-ui.js?v=1.6.19"></script>
+  <script src="js/load-monitor.js?v=1.6.19"></script>
+  <script src="js/camera-ip-map.js?v=1.6.19"></script>
+  <script src="js/admin-panel.js?v=1.6.19"></script>
+  <script src="js/ambiance.js?v=1.6.19"></script>
+  <script src="js/app.js?v=1.6.19"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

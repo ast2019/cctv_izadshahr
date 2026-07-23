@@ -1,4 +1,5 @@
-/** Admin-only panel: login audit + broken cameras (SQLite via portal API). */
+/** Admin-only panel: login audit + camera health (SQLite via portal API).
+ *  Camera sections are tabbed (broken / event history) with IP+name search. */
 (function () {
   function esc(v) {
     return String(v ?? "").replace(/[&<>"']/g, (c) =>
@@ -51,10 +52,48 @@
     return map[ev] || esc(ev);
   }
 
+  /** Camera IP from the generated map (config-derived). "" if unknown. */
+  function camIp(site, camera) {
+    try {
+      return (
+        (typeof CAMERA_IP !== "undefined" &&
+          CAMERA_IP[site] &&
+          CAMERA_IP[site][camera]) ||
+        ""
+      );
+    } catch {
+      return "";
+    }
+  }
+
   async function fetchJson(url) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error("fetch failed");
     return res.json();
+  }
+
+  // ---- Camera tab + search state -------------------------------------------
+  let _broken = [];
+  let _camEvents = [];
+  let _activeTab = "broken";
+  let _search = "";
+  let _bound = false;
+
+  function rowMatches(row) {
+    if (!_search) return true;
+    const ip = camIp(row.site, row.camera);
+    const hay = [
+      row.camera,
+      row.site,
+      ip,
+      row.detail,
+      row.last_detail,
+      eventLabel(row.event || row.status),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(_search);
   }
 
   function renderAuthTable(events) {
@@ -91,14 +130,18 @@
   }
 
   function renderBrokenTable(cameras) {
-    if (!cameras?.length) {
-      return '<p class="admin-empty">دوربین خراب فعالی در پایگاه ثبت نیست.</p>';
+    const list = (cameras || []).filter(rowMatches);
+    if (!list.length) {
+      return _search
+        ? '<p class="admin-empty">موردی با این جستجو پیدا نشد.</p>'
+        : '<p class="admin-empty">دوربین خراب فعالی در پایگاه ثبت نیست.</p>';
     }
-    const rows = cameras
+    const rows = list
       .map(
         (c) => `
       <tr>
         <td dir="ltr">${esc(c.camera)}</td>
+        <td dir="ltr">${camIp(c.site, c.camera) ? esc(camIp(c.site, c.camera)) : "—"}</td>
         <td>${c.site ? esc(c.site) : "—"}</td>
         <td>${c.status === "offline" ? "آفلاین" : "خراب/قطع"}</td>
         <td>${fmtTs(c.last_change)}</td>
@@ -112,6 +155,7 @@
           <thead>
             <tr>
               <th>دوربین</th>
+              <th>IP</th>
               <th>بخش</th>
               <th>وضعیت</th>
               <th>آخرین تغییر</th>
@@ -124,16 +168,20 @@
   }
 
   function renderCamEvents(events) {
-    if (!events?.length) {
-      return '<p class="admin-empty">رویداد دوربینی ثبت نشده است.</p>';
+    const list = (events || []).filter(rowMatches);
+    if (!list.length) {
+      return _search
+        ? '<p class="admin-empty">موردی با این جستجو پیدا نشد.</p>'
+        : '<p class="admin-empty">رویداد دوربینی ثبت نشده است.</p>';
     }
-    const rows = events
+    const rows = list
       .map(
         (e) => `
       <tr>
         <td>${fmtTs(e.ts)}</td>
         <td>${eventLabel(e.event)}</td>
         <td dir="ltr">${esc(e.camera)}</td>
+        <td dir="ltr">${camIp(e.site, e.camera) ? esc(camIp(e.site, e.camera)) : "—"}</td>
         <td>${e.site ? esc(e.site) : "—"}</td>
         <td>${e.detail ? esc(e.detail) : "—"}</td>
       </tr>`
@@ -147,6 +195,7 @@
               <th>زمان</th>
               <th>رویداد</th>
               <th>دوربین</th>
+              <th>IP</th>
               <th>بخش</th>
               <th>توضیح</th>
             </tr>
@@ -154,6 +203,40 @@
           <tbody>${rows}</tbody>
         </table>
       </div>`;
+  }
+
+  function renderCameraSection() {
+    const brokenEl = document.getElementById("admin-broken");
+    const camEvEl = document.getElementById("admin-cam-events");
+    if (brokenEl) {
+      brokenEl.innerHTML = renderBrokenTable(_broken);
+      brokenEl.hidden = _activeTab !== "broken";
+    }
+    if (camEvEl) {
+      camEvEl.innerHTML = renderCamEvents(_camEvents);
+      camEvEl.hidden = _activeTab !== "events";
+    }
+    document.querySelectorAll("[data-cam-tab]").forEach((b) => {
+      b.classList.toggle("is-active", b.dataset.camTab === _activeTab);
+    });
+  }
+
+  function bindCameraControls() {
+    if (_bound) return;
+    _bound = true;
+    document.querySelectorAll("[data-cam-tab]").forEach((b) => {
+      b.addEventListener("click", () => {
+        _activeTab = b.dataset.camTab;
+        renderCameraSection();
+      });
+    });
+    const search = document.getElementById("admin-cam-search");
+    if (search) {
+      search.addEventListener("input", () => {
+        _search = search.value.trim().toLowerCase();
+        renderCameraSection();
+      });
+    }
   }
 
   async function refreshAdminPanel() {
@@ -170,18 +253,22 @@
     const brokenEl = document.getElementById("admin-broken");
     const camEvEl = document.getElementById("admin-cam-events");
     if (authEl) authEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
-    if (brokenEl) brokenEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
-    if (camEvEl) camEvEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
+    if (brokenEl && _activeTab === "broken")
+      brokenEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
+    if (camEvEl && _activeTab === "events")
+      camEvEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
 
     try {
       const [audit, broken, camEvents] = await Promise.all([
         fetchJson("/api/audit/?limit=100"),
         fetchJson("/api/cameras/broken/"),
-        fetchJson("/api/cameras/events/?limit=50"),
+        fetchJson("/api/cameras/events/?limit=100"),
       ]);
       if (authEl) authEl.innerHTML = renderAuthTable(audit.events || []);
-      if (brokenEl) brokenEl.innerHTML = renderBrokenTable(broken.cameras || []);
-      if (camEvEl) camEvEl.innerHTML = renderCamEvents(camEvents.events || []);
+      _broken = broken.cameras || [];
+      _camEvents = camEvents.events || [];
+      bindCameraControls();
+      renderCameraSection();
     } catch {
       if (authEl) authEl.innerHTML = '<p class="admin-empty">خطا در خواندن لاگ‌ها</p>';
     }

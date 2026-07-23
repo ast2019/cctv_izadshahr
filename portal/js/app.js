@@ -208,15 +208,6 @@
     }
   }
 
-  function renderQuickLogin() {
-    const quick = document.getElementById("login-quick");
-    if (!quick || typeof PORTAL_AUTH === "undefined") return;
-    quick.innerHTML = `
-      <button type="button" class="btn-quick" data-quick-login="viewer">ورود ویور</button>
-      <button type="button" class="btn-quick btn-quick--admin" data-quick-login="admin">ورود ادمین</button>
-    `;
-  }
-
   async function loginSite(site, username, password) {
     try {
       const res = await fetch(`${site.apiPath}login`, {
@@ -306,7 +297,10 @@
       typeof PORTAL_AUTH !== "undefined"
         ? Object.values(PORTAL_AUTH).find((a) => a.user === sess.user)
         : null;
-    if (!account) return false;
+    // Passwords are no longer stored client-side (see auth-config.js), so we
+    // can't silently re-login. Degrade gracefully: keep the portal session and
+    // let that Frigate show its own login page only if it truly needs one.
+    if (!account || !account.pass) return false;
 
     const res = await loginSite(site, account.user, account.pass);
     if (res.status === 401) return "unauthorized";
@@ -429,26 +423,6 @@
     userInput?.addEventListener("focus", updateMascot);
     updateMascot();
 
-    document.querySelectorAll("[data-quick-login]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        if (!form || typeof PORTAL_AUTH === "undefined") return;
-        const account = PORTAL_AUTH[btn.dataset.quickLogin];
-        if (!account) return;
-        errEl.textContent = "";
-        form.username.value = account.user;
-        form.password.value = account.pass;
-        const submit = form.querySelector('button[type="submit"]');
-        submit.disabled = true;
-        try {
-          await loginAll(account.user, account.pass);
-          await afterLogin(account.user);
-        } catch (err) {
-          errEl.textContent = err.message || "خطا در ورود";
-        } finally {
-          submit.disabled = false;
-        }
-      });
-    });
   }
 
   function bindCardClicks() {
@@ -561,7 +535,6 @@
   }
 
   async function init() {
-    renderQuickLogin();
     updateIntro();
     renderCameraSummary(0);
     setupLogin();
