@@ -15,10 +15,13 @@ auth:
   session_length: 2592000
   refresh_time: 1296000
 
+# تشخیص خاموش + fps پایین: Frigate استریم را برای motion/API همیشه decode می‌کند،
+# پس fps کم بار decode را به حداقل می‌رساند.
 detect:
   enabled: false
+  fps: 3
 
-# فقط live view برای بررسی؛ ضبط دوربین‌های دائمی در نمونه مقصد روشن است.
+# هیچ دوربینی در temp نباید ضبط شود (قانون ثابت).
 record:
   enabled: false
 
@@ -30,6 +33,9 @@ birdseye:
 
 ffmpeg:
   global_args: -hide_banner -loglevel warning
+  # دوربین خراب هر ۲ دقیقه یک‌بار تلاش مجدد می‌کند (نه هر ۱۰ ثانیه) تا حلقه‌ی
+  # restart فشار الکی به سرور نیاورد.
+  retry_interval: 120
   output_args:
     record: preset-record-generic
 
