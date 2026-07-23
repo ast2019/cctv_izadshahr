@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
 from urllib.request import urlopen, Request
@@ -20,6 +20,8 @@ DB_PATH = Path(os.environ.get("PORTAL_DB", "/data/portal.db"))
 SNAP_DIR = Path(os.environ.get("PORTAL_SNAP_DIR", "/data/snapshots"))
 LOAD_RATIO_LIMIT = 0.5
 MEM_PERCENT_LIMIT = 30.0
+# Delete auth + camera event history older than this many days.
+RETENTION_DAYS = int(os.environ.get("PORTAL_RETENTION_DAYS", "30"))
 
 # Internal Frigate API (port 5000, no auth) — docker network hostnames
 FRIGATE_SOURCES = [
@@ -151,6 +153,22 @@ def init_db():
                 """
             )
             conn.commit()
+        finally:
+            conn.close()
+
+
+def purge_old_data(days=RETENTION_DAYS):
+    """Delete auth + camera events with a timestamp older than `days`.
+    Timestamps are UTC ISO-8601 (same format), so lexical `<` compare is correct.
+    camera_status is current-state (not history) and is left untouched."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    with _db_lock:
+        conn = db_connect()
+        try:
+            a = conn.execute("DELETE FROM auth_events WHERE ts < ?", (cutoff,)).rowcount
+            e = conn.execute("DELETE FROM camera_events WHERE ts < ?", (cutoff,)).rowcount
+            conn.commit()
+            return {"auth_events": a, "camera_events": e, "cutoff": cutoff}
         finally:
             conn.close()
 
@@ -411,6 +429,10 @@ def snapshot_worker():
             collect_snapshots()
         except Exception:
             pass
+        try:
+            purge_old_data()
+        except Exception:
+            pass
         time.sleep(max(60, SNAP_INTERVAL_SEC))
 
 
@@ -571,6 +593,10 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    try:
+        purge_old_data()
+    except Exception:
+        pass
     SNAP_DIR.mkdir(parents=True, exist_ok=True)
     load_manifest_from_disk()
     threading.Thread(target=snapshot_worker, name="snap-worker", daemon=True).start()

@@ -2,10 +2,9 @@
 # TEMPORARY instance — دوربین‌های باقی‌مانده برای بررسی
 # بدون تصویر / نیاز به بررسی: cam_21, cam_85, cam_88, cam_96
 # برگردانده‌شده برای بررسی مجدد (قبلاً به‌عنوان خراب حذف شده بودند):
-#   cam_89, cam_90 (پارکینگ۳)، cam_99 (ظرف‌شویی/آشپزخانه)،
-#   cam_100 (درب پشت رستوران)، cam_101 (ورودی رستوران)
+#   cam_89, cam_90 (پارکینگ۳)، cam_100 (درب پشت رستوران)، cam_101 (ورودی رستوران)
 # منتقل‌شده برای بررسی: cam_95 (خانه‌داری، از anbar)
-# (cam_112 اتاق سرور منتقل شد به center11/پذیرش.)
+# (cam_99 درست شد و به رستوران منتقل شد؛ cam_112 اتاق سرور به center11 رفت.)
 # بعد از تعیین تکلیف این دوربین‌ها، کل نمونه temp حذف می‌شود.
 # =============================================================================
 mqtt:
@@ -49,8 +48,6 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.89:554/Streaming/Channels/102
     cam_90:
       - rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102
-    cam_99:
-      - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/102
     cam_100:
       - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/102
     cam_101:
@@ -72,8 +69,6 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_89, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_90:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_90, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_99:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_99, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_100:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_100, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_101:

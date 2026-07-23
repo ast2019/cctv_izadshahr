@@ -741,6 +741,41 @@ body {
   color: var(--text-muted);
 }
 
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-pager-btn {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.admin-pager-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.admin-pager-info {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);

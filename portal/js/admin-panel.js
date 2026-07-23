@@ -1,6 +1,11 @@
-/** Admin-only panel: login audit + camera health (SQLite via portal API).
- *  Camera sections are tabbed (broken / event history) with IP+name search. */
+/** Admin-only panel: login audit (last 5) + camera health (tabbed, paginated).
+ *  Camera sections are tabbed (broken / event history) with IP+name search
+ *  and 10-per-page pagination. */
 (function () {
+  const PAGE_SIZE = 10;
+  const AUTH_LIMIT = 5;
+  const EVENTS_LIMIT = 500; // fetch window; paginated 10 at a time client-side
+
   function esc(v) {
     return String(v ?? "").replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
@@ -12,14 +17,20 @@
       const raw = localStorage.getItem("cctv_portal_session");
       if (!raw) return false;
       const sess = JSON.parse(raw);
-      // PORTAL_AUTH is a top-level const in auth-config.js — a global binding,
-      // NOT a window property — so read it by name (as app.js does), not off window.
       const adminUser =
         (typeof PORTAL_AUTH !== "undefined" && PORTAL_AUTH?.admin?.user) || "admin";
       if (!(sess?.at && Date.now() - sess.at <= 30 * 24 * 60 * 60 * 1000)) return false;
       return sess?.user === adminUser;
     } catch {
       return false;
+    }
+  }
+
+  function faNum(n) {
+    try {
+      return Number(n).toLocaleString("fa-IR", { useGrouping: false });
+    } catch {
+      return String(n);
     }
   }
 
@@ -72,11 +83,13 @@
     return res.json();
   }
 
-  // ---- Camera tab + search state -------------------------------------------
+  // ---- Camera tab + search + pagination state ------------------------------
   let _broken = [];
   let _camEvents = [];
   let _activeTab = "broken";
   let _search = "";
+  let _brokenPage = 0;
+  let _eventsPage = 0;
   let _bound = false;
 
   function rowMatches(row) {
@@ -94,6 +107,24 @@
       .join(" ")
       .toLowerCase();
     return hay.includes(_search);
+  }
+
+  function pagerHtml(page, totalPages, totalItems) {
+    if (totalPages <= 1) {
+      return `<div class="admin-pager"><span class="admin-pager-info">${faNum(totalItems)} مورد</span></div>`;
+    }
+    return `
+      <div class="admin-pager">
+        <button type="button" class="admin-pager-btn" data-page-dir="prev" ${
+          page <= 0 ? "disabled" : ""
+        }>قبلی</button>
+        <span class="admin-pager-info">صفحه ${faNum(page + 1)} از ${faNum(
+      totalPages
+    )} · ${faNum(totalItems)} مورد</span>
+        <button type="button" class="admin-pager-btn" data-page-dir="next" ${
+          page >= totalPages - 1 ? "disabled" : ""
+        }>بعدی</button>
+      </div>`;
   }
 
   function renderAuthTable(events) {
@@ -116,27 +147,24 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr>
-              <th>زمان</th>
-              <th>رویداد</th>
-              <th>کاربر</th>
-              <th>IP</th>
-              <th>وضعیت</th>
-            </tr>
+            <tr><th>زمان</th><th>رویداد</th><th>کاربر</th><th>IP</th><th>وضعیت</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
   }
 
-  function renderBrokenTable(cameras) {
-    const list = (cameras || []).filter(rowMatches);
+  function renderBrokenTable() {
+    const list = (_broken || []).filter(rowMatches);
     if (!list.length) {
       return _search
         ? '<p class="admin-empty">موردی با این جستجو پیدا نشد.</p>'
         : '<p class="admin-empty">دوربین خراب فعالی در پایگاه ثبت نیست.</p>';
     }
-    const rows = list
+    const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    _brokenPage = Math.min(Math.max(_brokenPage, 0), totalPages - 1);
+    const slice = list.slice(_brokenPage * PAGE_SIZE, _brokenPage * PAGE_SIZE + PAGE_SIZE);
+    const rows = slice
       .map(
         (c) => `
       <tr>
@@ -153,28 +181,25 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr>
-              <th>دوربین</th>
-              <th>IP</th>
-              <th>بخش</th>
-              <th>وضعیت</th>
-              <th>آخرین تغییر</th>
-              <th>توضیح</th>
-            </tr>
+            <tr><th>دوربین</th><th>IP</th><th>بخش</th><th>وضعیت</th><th>آخرین تغییر</th><th>توضیح</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
-      </div>`;
+      </div>
+      ${pagerHtml(_brokenPage, totalPages, list.length)}`;
   }
 
-  function renderCamEvents(events) {
-    const list = (events || []).filter(rowMatches);
+  function renderCamEvents() {
+    const list = (_camEvents || []).filter(rowMatches);
     if (!list.length) {
       return _search
         ? '<p class="admin-empty">موردی با این جستجو پیدا نشد.</p>'
         : '<p class="admin-empty">رویداد دوربینی ثبت نشده است.</p>';
     }
-    const rows = list
+    const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    _eventsPage = Math.min(Math.max(_eventsPage, 0), totalPages - 1);
+    const slice = list.slice(_eventsPage * PAGE_SIZE, _eventsPage * PAGE_SIZE + PAGE_SIZE);
+    const rows = slice
       .map(
         (e) => `
       <tr>
@@ -191,29 +216,23 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr>
-              <th>زمان</th>
-              <th>رویداد</th>
-              <th>دوربین</th>
-              <th>IP</th>
-              <th>بخش</th>
-              <th>توضیح</th>
-            </tr>
+            <tr><th>زمان</th><th>رویداد</th><th>دوربین</th><th>IP</th><th>بخش</th><th>توضیح</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
-      </div>`;
+      </div>
+      ${pagerHtml(_eventsPage, totalPages, list.length)}`;
   }
 
   function renderCameraSection() {
     const brokenEl = document.getElementById("admin-broken");
     const camEvEl = document.getElementById("admin-cam-events");
     if (brokenEl) {
-      brokenEl.innerHTML = renderBrokenTable(_broken);
+      brokenEl.innerHTML = renderBrokenTable();
       brokenEl.hidden = _activeTab !== "broken";
     }
     if (camEvEl) {
-      camEvEl.innerHTML = renderCamEvents(_camEvents);
+      camEvEl.innerHTML = renderCamEvents();
       camEvEl.hidden = _activeTab !== "events";
     }
     document.querySelectorAll("[data-cam-tab]").forEach((b) => {
@@ -234,6 +253,26 @@
     if (search) {
       search.addEventListener("input", () => {
         _search = search.value.trim().toLowerCase();
+        _brokenPage = 0;
+        _eventsPage = 0;
+        renderCameraSection();
+      });
+    }
+    const brokenEl = document.getElementById("admin-broken");
+    if (brokenEl) {
+      brokenEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-page-dir]");
+        if (!btn) return;
+        _brokenPage += btn.dataset.pageDir === "next" ? 1 : -1;
+        renderCameraSection();
+      });
+    }
+    const camEvEl = document.getElementById("admin-cam-events");
+    if (camEvEl) {
+      camEvEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-page-dir]");
+        if (!btn) return;
+        _eventsPage += btn.dataset.pageDir === "next" ? 1 : -1;
         renderCameraSection();
       });
     }
@@ -250,19 +289,13 @@
     panel.hidden = false;
 
     const authEl = document.getElementById("admin-auth-log");
-    const brokenEl = document.getElementById("admin-broken");
-    const camEvEl = document.getElementById("admin-cam-events");
     if (authEl) authEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
-    if (brokenEl && _activeTab === "broken")
-      brokenEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
-    if (camEvEl && _activeTab === "events")
-      camEvEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
 
     try {
       const [audit, broken, camEvents] = await Promise.all([
-        fetchJson("/api/audit/?limit=100"),
+        fetchJson(`/api/audit/?limit=${AUTH_LIMIT}`),
         fetchJson("/api/cameras/broken/"),
-        fetchJson("/api/cameras/events/?limit=100"),
+        fetchJson(`/api/cameras/events/?limit=${EVENTS_LIMIT}`),
       ]);
       if (authEl) authEl.innerHTML = renderAuthTable(audit.events || []);
       _broken = broken.cameras || [];
