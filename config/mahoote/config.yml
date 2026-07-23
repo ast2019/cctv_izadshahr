@@ -51,6 +51,11 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.153:554/Streaming/Channels/102
     cam_203:
       - rtsp://admin:admin123@192.168.51.203:554/Streaming/Channels/102
+    # منتقل‌شده از restaurant — بالای رستوران بیرون به سمت پل/ساحل (password admin123)
+    cam_81:
+      - rtsp://admin:admin123@192.168.51.81:554/Streaming/Channels/102
+    cam_84:
+      - rtsp://admin:admin123@192.168.51.84:554/Streaming/Channels/102
 
 cameras:
   generator:
@@ -75,5 +80,9 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_153, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_203:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_203, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_81:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_81, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_84:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_84, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

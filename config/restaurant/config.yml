@@ -45,12 +45,8 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.18:554/Streaming/Channels/102
     cam_19:
       - rtsp://admin:admin123@192.168.51.19:554/Streaming/Channels/102
-    # بالای رستوران، بیرون به سمت پل و ساحل
-    cam_81:
-      - rtsp://admin:admin123@192.168.51.81:554/Streaming/Channels/102
-    cam_84:
-      - rtsp://admin:admin123@192.168.51.84:554/Streaming/Channels/102
-    # .99/.100/.101 عمداً حذف شده‌اند چون کار نمی‌کردند.
+    # cam_81/cam_84 (بالای رستوران بیرون) منتقل شدند به mahoote (محوطه).
+    # .99/.100/.101 برای بررسی به نمونه temp منتقل شدند.
 
 cameras:
   restoran_paeen:
@@ -67,9 +63,5 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_18, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_19:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_19, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_81:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_81, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_84:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_84, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

@@ -246,7 +246,9 @@
   /** Login to every enabled site. Succeeds if at least one site accepts —
    *  one offline Frigate must not lock the user out of the others. */
   async function loginAll(username, password) {
-    const enabled = SITES.filter((s) => s.enabled);
+    // authDisabled sites are served from Frigate's unauthenticated port (5000)
+    // — never send them credentials, they open without any login.
+    const enabled = SITES.filter((s) => s.enabled && !s.authDisabled);
     const results = [];
     for (const site of enabled) {
       results.push(await loginSite(site, username, password));
@@ -294,6 +296,8 @@
    *  keep portal session, Frigate will ask itself if really needed),
    *  or "unauthorized" (stored credentials rejected — real re-login needed). */
   async function ensureSiteAuth(site) {
+    // No-auth instance (served from port 5000) — always accessible, no login.
+    if (site.authDisabled) return true;
     if (await verifySiteAuth(site)) return true;
 
     const sess = getSession();
