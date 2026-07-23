@@ -16,32 +16,32 @@
 | نمونه | پورت | تعداد | دوربین‌ها / محل |
 |---|---:|---:|---|
 | `cafe` | 8972 | 10 | DVR کافه ch1–8، `.52` نمای غربی کافه، `.49` ورودی کافه |
-| `center11` | 8973 | 7 | `.4,.5,.6,.9,.41`، پذیرش به پل `.134`، پذیرش به ساحل `.135` |
+| `center11` | 8973 | 8 | `.4,.5,.6,.9,.41`، پذیرش به پل `.134`، پذیرش به ساحل `.135`، اتاق سرور `.112` |
 | `restaurant` | 8975 | 9 | `.136,.137,.14,.13,.17,.18,.19,.81,.84` |
-| `sahel` | 8976 | 5 | `.54,.47,.48,.53,.16` |
+| `sahel` | 8976 | 4 | `.54,.47,.48,.53` |
 | `villa` | 8977 | 5 | `.51,.12,.20,.43,.44` |
 | `mahoote` | 8978 | 11 | `.10,.132,.24,.25,.27,.30,.31,.50,.71,.153,.203` |
 | `center22` | 8974 | 16 | DVR پارکینگ۴ ch1–3 و `.2,.8,.42,.45,.46,.82,.83,.86,.91,.92,.93,.94,.98` |
 | `tasisat` | 8980 | 5 | دیوار غربی محدوده تصفیه‌خانه فاضلاب و پشت لاله: `.61,.62,.63,.64,.65` |
-| `entezamat` | 8981 | 2 | `.3,.7` |
+| `entezamat` | 8981 | 3 | `.3,.7`، کانکس ساحل `.16` |
 | `anbar` | 8982 | 4 | DVR پارکینگ۴ ch4/ch5 (انبار مرکزی/خانه‌داری)، `.95` خانه‌داری، `.97` انبار |
-| `temp` | 8979 | 5 | `.21,.85,.88,.96` نیازمند بررسی تصویر؛ `.112` اتاق سرور، در انتظار دسته مستقل |
+| `temp` | 8979 | 4 | `.21,.85,.88,.96` نیازمند بررسی تصویر |
 
 ### نام‌های دقیق هر نمونه
 
 | نمونه | نام‌های Frigate |
 |---|---|
 | `cafe` | `dvr_cafe_ch1` تا `dvr_cafe_ch8`, `view_cafe_gharb`, `vorodi_cafe` |
-| `center11` | `cam_4`, `cam_5`, `cam_6`, `cam_9`, `cam_41`, `paziresh_be_pol`, `paziresh_be_sahel` |
+| `center11` | `cam_4`, `cam_5`, `cam_6`, `cam_9`, `cam_41`, `paziresh_be_pol`, `paziresh_be_sahel`, `cam_112` |
 | `restaurant` | `restoran_paeen`, `restoran_bala`, `restoran_sandogh`, `cam_13`, `cam_17`, `cam_18`, `cam_19`, `cam_81`, `cam_84` |
-| `sahel` | `sahel_shargh`, `sahel_gharb_47`, `sahel_gharb_48`, `view_cafe_shargh`, `sahel_kanex` |
+| `sahel` | `sahel_shargh`, `sahel_gharb_47`, `sahel_gharb_48`, `view_cafe_shargh` |
 | `villa` | `villa_ha`, `villa_ha_gharb`, `cam_20`, `cam_43`, `cam_44` |
 | `mahoote` | `generator`, `parking_villa`, `cam_24`, `cam_25`, `cam_27`, `cam_30`, `cam_31`, `cam_50`, `cam_71`, `cam_153`, `cam_203` |
 | `center22` | `dvr_parking4_ch1` تا `ch3`, `cam_2`, `cam_8`, `cam_42`, `cam_45`, `cam_46`, `cam_82`, `cam_83`, `cam_86`, `cam_91` تا `cam_94`, `cam_98` |
 | `tasisat` | `cam_61` تا `cam_65` |
-| `entezamat` | `cam_3`, `cam_7` |
+| `entezamat` | `cam_3`, `cam_7`, `cam_16` |
 | `anbar` | `dvr_parking4_ch4`, `dvr_parking4_ch5`, `cam_95`, `cam_97` |
-| `temp` | `cam_21`, `cam_85`, `cam_88`, `cam_96`, `cam_112` |
+| `temp` | `cam_21`, `cam_85`, `cam_88`, `cam_96` |
 
 ## DVRها
 
@@ -119,11 +119,11 @@ rtsp://192.168.51.222:554/user=admin_password=admin123_channel=<1-5>_stream=0.sd
 
 | وضعیت | تعداد |
 |---|---:|
-| فعال در ۱۰ نمونه دائمی | **74** |
-| در نمونه موقت `temp` | **5** |
+| فعال در ۱۰ نمونه دائمی | **75** |
+| در نمونه موقت `temp` | **4** |
 | planned (فقط DVR کافه ch10) | **1** |
 | مجموع موجودی کارت پرتال | **80** |
-| inactive در پرتال | **6** |
+| inactive در پرتال | **5** |
 | broken | **0** |
 
 </div>

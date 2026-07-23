@@ -1,8 +1,8 @@
 # =============================================================================
 # TEMPORARY instance — دوربین‌های باقی‌مانده برای بررسی
 # بدون تصویر / نیاز به بررسی: cam_21, cam_85, cam_88, cam_96
-# مقصد مشخص ولی دسته مستقل ندارد: cam_112 (اتاق سرور)
-# بعد از تعیین تکلیف این ۵ دوربین، کل نمونه temp حذف می‌شود.
+# (cam_112 اتاق سرور منتقل شد به center11/پذیرش.)
+# بعد از تعیین تکلیف این ۴ دوربین، کل نمونه temp حذف می‌شود.
 # =============================================================================
 mqtt:
   enabled: false
@@ -40,8 +40,6 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.88:554/Streaming/Channels/102
     cam_96:
       - rtsp://admin:admin123@192.168.51.96:554/Streaming/Channels/102
-    cam_112:
-      - rtsp://admin:admin123@192.168.51.112:554/Streaming/Channels/102
 
 cameras:
   cam_21:
@@ -52,7 +50,5 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_88, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_96:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_96, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_112:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_112, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

@@ -35,6 +35,9 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.3:554/Streaming/Channels/102
     cam_7:
       - rtsp://admin:admin123@192.168.51.7:554/Streaming/Channels/102
+    # cam_16 (.16) منتقل شد از sahel (sahel_kanex) — password admin123.
+    cam_16:
+      - rtsp://admin:admin123@192.168.51.16:554/Streaming/Channels/102
 
 cameras:
   cam_3:
@@ -47,6 +50,12 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cam_7
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_16:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_16
           input_args: preset-rtsp-restream
           roles: [record]
 

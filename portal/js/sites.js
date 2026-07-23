@@ -19,10 +19,10 @@ const SITES = [
     slug: "center11",
     title: "پذیرش و ورودی مجتمع",
     titleEn: "Reception & Complex Entrance",
-    description: "دوربین‌های پذیرش و ورودی مجتمع",
+    description: "دوربین‌های پذیرش، ورودی مجتمع و اتاق سرور",
     icon: "🏨",
     port: 8973,
-    cameraCount: 7,
+    cameraCount: 8,
     enabled: true,
     healthPath: "/health/center11/",
     apiPath: "/center11/api/",
@@ -50,7 +50,7 @@ const SITES = [
     description: "دوربین‌های ساحل شرق و غرب",
     icon: "🏖️",
     port: 8976,
-    cameraCount: 5,
+    cameraCount: 4,
     enabled: true,
     healthPath: "/health/sahel/",
     apiPath: "/sahel/api/",
@@ -117,10 +117,10 @@ const SITES = [
     slug: "entezamat",
     title: "انتظامات",
     titleEn: "Security",
-    description: "دوربین‌های انتظامات",
+    description: "دوربین‌های انتظامات و کانکس ساحل",
     icon: "🛡️",
     port: 8981,
-    cameraCount: 2,
+    cameraCount: 3,
     enabled: true,
     healthPath: "/health/entezamat/",
     apiPath: "/entezamat/api/",
@@ -146,10 +146,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۵ دوربین باقی‌مانده (۴ بدون تصویر + cam_112 اتاق سرور)",
+    description: "۴ دوربین باقی‌مانده بدون تصویر — نیازمند بررسی",
     icon: "🧪",
     port: 8979,
-    cameraCount: 5,
+    cameraCount: 4,
     enabled: true,
     temporary: true,
     healthPath: "/health/temp/",
@@ -165,8 +165,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=74 در نمونه‌های دائمی + temp=5 (در حال بررسی) + ch10 planned=1
+  // active=75 در نمونه‌های دائمی + temp=4 (در حال بررسی) + ch10 planned=1
   total: 80,
-  inactive: 6, // 5 در نمونه موقت temp + dvr_cafe_ch10
+  inactive: 5, // 4 در نمونه موقت temp + dvr_cafe_ch10
   broken: 0, // خراب‌ها عمداً حذف شدند
 };
