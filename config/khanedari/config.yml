@@ -1,0 +1,45 @@
+# khanedari = خانه‌داری. Record-only NVR.
+# cam_95 منتقل‌شده از temp؛ cam_98 منتقل‌شده از center22.
+mqtt:
+  enabled: false
+
+auth:
+  cookie_secure: false
+  session_length: 2592000
+  refresh_time: 1296000
+
+detect:
+  enabled: false
+  fps: 3
+
+record:
+  enabled: true
+  retain:
+    days: 1
+    mode: all
+
+snapshots:
+  enabled: false
+
+birdseye:
+  enabled: false
+
+ffmpeg:
+  global_args: -hide_banner -loglevel warning
+  output_args:
+    record: preset-record-generic
+
+go2rtc:
+  streams:
+    cam_95:
+      - rtsp://admin:admin123@192.168.51.95:554/Streaming/Channels/102
+    cam_98:
+      - rtsp://admin:admin123@192.168.51.98:554/Streaming/Channels/102
+
+cameras:
+  cam_95:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_95, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_98:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_98, input_args: preset-rtsp-restream, roles: [record] }] }
+
+version: 0.16-0

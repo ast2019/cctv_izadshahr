@@ -1,6 +1,7 @@
 # anbar = انبار. Record-only NVR. جدا از پارکینگ (center22).
 # انبار مرکزی و خانه‌داری روی DVR .222، انبار IP روی .97.
-# cam_95 (خانه‌داری) به temp منتقل شد برای بررسی (به‌درخواست کاربر).
+# cam_95 (خانه‌داری) به khanedari منتقل شد.
+# dvr_parking4_ch4 به center22 (پارکینگ) منتقل شد.
 mqtt:
   enabled: false
 
@@ -32,16 +33,27 @@ ffmpeg:
 
 go2rtc:
   streams:
-    dvr_parking4_ch4:
-      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=4_stream=0.sdp?real_stream
+    # dvr_parking4_ch1, ch2, ch3 منتقل‌شده از center22.
+    dvr_parking4_ch1:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=1_stream=0.sdp?real_stream
+    dvr_parking4_ch2:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=2_stream=0.sdp?real_stream
+    dvr_parking4_ch3:
+      - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=3_stream=0.sdp?real_stream
+    # dvr_parking4_ch4 منتقل شد به center22 (پارکینگ).
     dvr_parking4_ch5:
       - rtsp://192.168.51.222:554/user=admin_password=admin123_channel=5_stream=0.sdp?real_stream
     cam_97:
       - rtsp://admin:admin123@192.168.51.97:554/Streaming/Channels/102
 
 cameras:
-  dvr_parking4_ch4:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch4, input_args: preset-rtsp-restream, roles: [record] }] }
+  dvr_parking4_ch1:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch1, input_args: preset-rtsp-restream, roles: [record] }] }
+  dvr_parking4_ch2:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch2, input_args: preset-rtsp-restream, roles: [record] }] }
+  dvr_parking4_ch3:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch3, input_args: preset-rtsp-restream, roles: [record] }] }
+  # dvr_parking4_ch4 منتقل شد به center22 (پارکینگ).
   dvr_parking4_ch5:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/dvr_parking4_ch5, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_97:

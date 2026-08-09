@@ -1,5 +1,7 @@
-# tasisat = تاسیسات. Record-only NVR.
-# دیوار غربی در محدوده تصفیه‌خانه فاضلاب و پشت لاله: cam_61 تا cam_65.
+# tasisat = تاسیسات. DISABLED — در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱.
+# cam_61, cam_62, cam_63, cam_65 به mahoote (محوطه) منتقل شدند.
+# cam_64 بدون تصویر — فعلاً اینجا باقی می‌ماند.
+# پس از نصب دوربین‌های جدید، این نمونه مجدداً فعال می‌شود.
 mqtt:
   enabled: false
 
@@ -13,10 +15,7 @@ detect:
   fps: 3
 
 record:
-  enabled: true
-  retain:
-    days: 1
-    mode: all
+  enabled: false
 
 snapshots:
   enabled: false
@@ -26,33 +25,18 @@ birdseye:
 
 ffmpeg:
   global_args: -hide_banner -loglevel warning
+  retry_interval: 120
   output_args:
     record: preset-record-generic
 
 go2rtc:
   streams:
-    # دیوار غربی — تصفیه‌خانه فاضلاب و پشت لاله (password admin123)
-    cam_61:
-      - rtsp://admin:admin123@192.168.51.61:554/Streaming/Channels/102
-    cam_62:
-      - rtsp://admin:admin123@192.168.51.62:554/Streaming/Channels/102
-    cam_63:
-      - rtsp://admin:admin123@192.168.51.63:554/Streaming/Channels/102
+    # cam_61, cam_62, cam_63, cam_65 منتقل شدند به mahoote (محوطه).
     cam_64:
       - rtsp://admin:admin123@192.168.51.64:554/Streaming/Channels/102
-    cam_65:
-      - rtsp://admin:admin123@192.168.51.65:554/Streaming/Channels/102
 
 cameras:
-  cam_61:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_61, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_62:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_62, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_63:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_63, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_64:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_64, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_65:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_65, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

@@ -75,10 +75,10 @@ const SITES = [
     slug: "mahoote",
     title: "محوطه",
     titleEn: "Grounds",
-    description: "محوطه، ژنراتور، دیوار شرقی و بالای رستوران",
+    description: "محوطه، ژنراتور، دیوار غربی/شرقی و بالای رستوران",
     icon: "🌳",
     port: 8978,
-    cameraCount: 13,
+    cameraCount: 21,
     enabled: true,
     healthPath: "/health/mahoote/",
     apiPath: "/mahoote/api/",
@@ -89,10 +89,10 @@ const SITES = [
     slug: "center22",
     title: "پارکینگ",
     titleEn: "Parking",
-    description: "پارکینگ‌های ۱ تا ۴ و موتورخانه پارکینگ ۱",
+    description: "پارکینگ‌ها و موتورخانه (DVR ch4 + دوربین‌های IP)",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 16,
+    cameraCount: 9,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
@@ -103,11 +103,11 @@ const SITES = [
     slug: "tasisat",
     title: "تاسیسات",
     titleEn: "Facilities",
-    description: "دیوار غربی؛ تصفیه‌خانه فاضلاب و پشت لاله (cam_61 تا cam_65)",
+    description: "غیرفعال — در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱ (فقط cam_64 بدون تصویر)",
     icon: "⚙️",
     port: 8980,
-    cameraCount: 5,
-    enabled: true,
+    cameraCount: 1,
+    enabled: false,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/tasisat/",
     apiPath: "/tasisat/api/",
@@ -133,14 +133,29 @@ const SITES = [
     slug: "anbar",
     title: "انبار",
     titleEn: "Warehouse",
-    description: "انبار مرکزی و خانه‌داری (DVR) + cam_97",
+    description: "DVR پارکینگ۴ ch1–3,5 + cam_97 انبار",
     icon: "📦",
     port: 8982,
-    cameraCount: 3,
+    cameraCount: 5,
     enabled: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/anbar/",
     apiPath: "/anbar/api/",
+    cssClass: "card--active",
+  },
+  {
+    id: "khanedari",
+    slug: "khanedari",
+    title: "خانه‌داری",
+    titleEn: "Housekeeping",
+    description: "cam_95 و cam_98 — بخش خانه‌داری",
+    icon: "🧹",
+    port: 8983,
+    cameraCount: 2,
+    enabled: true,
+    authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
+    healthPath: "/health/khanedari/",
+    apiPath: "/khanedari/api/",
     cssClass: "card--active",
   },
   {
@@ -149,10 +164,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۹ دوربین برای بررسی (بدون تصویر + برگردانده‌شده + خانه‌داری)",
+    description: "۸ دوربین برای بررسی (بدون تصویر + برگردانده‌شده)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 9,
+    cameraCount: 8,
     enabled: true,
     temporary: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
@@ -169,8 +184,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=75 در نمونه‌های دائمی + temp=9 (در حال بررسی) + ch10 planned=1
-  total: 85,
-  inactive: 10, // 9 در نمونه موقت temp + dvr_cafe_ch10
+  // active=76 در نمونه‌های دائمی + temp=8 (در حال بررسی) + tasisat cam_64=1 (بدون تصویر) + dvr_cafe_ch10 planned=1
+  total: 86,
+  inactive: 10, // 8 در نمونه موقت temp + cam_64 tasisat + dvr_cafe_ch10
   broken: 0, // در حال بررسی در نمونه temp
 };
