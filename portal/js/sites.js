@@ -106,7 +106,7 @@ const SITES = [
     description: "اتاق تاسیسات",
     icon: "⚙️",
     port: 8980,
-    cameraCount: 2,
+    cameraCount: 1,
     enabled: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/tasisat/",

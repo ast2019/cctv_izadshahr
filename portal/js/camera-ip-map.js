@@ -92,7 +92,6 @@ const CAMERA_IP = {
     "view_cafe_shargh": "192.168.51.53"
   },
   "tasisat": {
-    "cam_64": "192.168.51.64",
     "cam_85": "192.168.51.85"
   },
   "temp": {
