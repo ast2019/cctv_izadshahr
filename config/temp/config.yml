@@ -43,8 +43,6 @@ go2rtc:
   streams:
     cam_21:
       - rtsp://admin:admin123@192.168.51.21:554/Streaming/Channels/102
-    cam_85:
-      - rtsp://admin:admin123@192.168.51.85:554/Streaming/Channels/102
     cam_88:
       - rtsp://admin:admin123@192.168.51.88:554/Streaming/Channels/102
     cam_96:
@@ -59,12 +57,18 @@ go2rtc:
     cam_101:
       - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/102
     # cam_95 (خانه‌داری) منتقل شد به نمونه khanedari.
+    # دوربین‌های جدید برای بررسی:
+    cam_72:
+      - rtsp://admin:1259110%40av@192.168.51.72:554/Streaming/Channels/102
+    cam_11:
+      - rtsp://admin:admin123@192.168.51.11:554/Streaming/Channels/102
+    # cam_71 (.71) منتقل‌شده از mahoote — رمز جدید 1259110@av
+    cam_71:
+      - rtsp://admin:1259110%40av@192.168.51.71:554/Streaming/Channels/102
 
 cameras:
   cam_21:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_21, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_85:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_85, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_88:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_88, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_96:
@@ -77,6 +81,12 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_100, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_101:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_101, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_72:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_72, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_11:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_11, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_71:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_71, input_args: preset-rtsp-restream, roles: [record] }] }
   # cam_95 منتقل شد به نمونه khanedari.
 
 version: 0.16-0

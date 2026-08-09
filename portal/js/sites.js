@@ -64,7 +64,7 @@ const SITES = [
     description: "دوربین‌های ویلاها و جلوی ارکیده",
     icon: "🏠",
     port: 8977,
-    cameraCount: 5,
+    cameraCount: 4,
     enabled: true,
     healthPath: "/health/villa/",
     apiPath: "/villa/api/",
@@ -78,7 +78,7 @@ const SITES = [
     description: "محوطه، ژنراتور، دیوار غربی/شرقی و بالای رستوران",
     icon: "🌳",
     port: 8978,
-    cameraCount: 21,
+    cameraCount: 19,
     enabled: true,
     healthPath: "/health/mahoote/",
     apiPath: "/mahoote/api/",
@@ -103,11 +103,11 @@ const SITES = [
     slug: "tasisat",
     title: "تاسیسات",
     titleEn: "Facilities",
-    description: "غیرفعال — در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱ (فقط cam_64 بدون تصویر)",
+    description: "اتاق تاسیسات (cam_85) + cam_64 — در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱",
     icon: "⚙️",
     port: 8980,
-    cameraCount: 1,
-    enabled: false,
+    cameraCount: 2,
+    enabled: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/tasisat/",
     apiPath: "/tasisat/api/",
@@ -164,10 +164,10 @@ const SITES = [
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "۸ دوربین برای بررسی (بدون تصویر + برگردانده‌شده)",
+    description: "۱۰ دوربین برای بررسی (بدون تصویر + برگردانده‌شده + جدید)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 8,
+    cameraCount: 10,
     enabled: true,
     temporary: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
@@ -184,8 +184,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=76 در نمونه‌های دائمی + temp=8 (در حال بررسی) + tasisat cam_64=1 (بدون تصویر) + dvr_cafe_ch10 planned=1
-  total: 86,
-  inactive: 10, // 8 در نمونه موقت temp + cam_64 tasisat + dvr_cafe_ch10
+  // active=73 در نمونه‌های دائمی + temp=10 (در حال بررسی) + dvr_cafe_ch10 planned=1
+  total: 84,
+  inactive: 11, // 10 در نمونه موقت temp + dvr_cafe_ch10
   broken: 0, // در حال بررسی در نمونه temp
 };

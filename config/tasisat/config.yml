@@ -1,7 +1,7 @@
-# tasisat = تاسیسات. DISABLED — در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱.
+# tasisat = تاسیسات. در انتظار نصب ۱۲ دوربین جدید پارکینگ ۱.
 # cam_61, cam_62, cam_63, cam_65 به mahoote (محوطه) منتقل شدند.
 # cam_64 بدون تصویر — فعلاً اینجا باقی می‌ماند.
-# پس از نصب دوربین‌های جدید، این نمونه مجدداً فعال می‌شود.
+# cam_85 (اتاق تاسیسات) از temp منتقل و فعال شد.
 mqtt:
   enabled: false
 
@@ -15,7 +15,10 @@ detect:
   fps: 3
 
 record:
-  enabled: false
+  enabled: true
+  retain:
+    days: 1
+    mode: all
 
 snapshots:
   enabled: false
@@ -25,18 +28,20 @@ birdseye:
 
 ffmpeg:
   global_args: -hide_banner -loglevel warning
-  retry_interval: 120
   output_args:
     record: preset-record-generic
 
 go2rtc:
   streams:
-    # cam_61, cam_62, cam_63, cam_65 منتقل شدند به mahoote (محوطه).
     cam_64:
       - rtsp://admin:admin123@192.168.51.64:554/Streaming/Channels/102
+    cam_85:
+      - rtsp://admin:admin123@192.168.51.85:554/Streaming/Channels/102
 
 cameras:
   cam_64:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_64, input_args: preset-rtsp-restream, roles: [record] }] }
+  cam_85:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_85, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0
