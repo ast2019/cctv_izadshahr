@@ -56,6 +56,9 @@ go2rtc:
     # cam_112 (.112) اتاق سرور — منتقل شد از temp (به‌درخواست کاربر). password admin123.
     cam_112:
       - rtsp://admin:admin123@192.168.51.112:554/Streaming/Channels/102
+    # cam_11 (.11) ورودی اتاق مدیریت — منتقل شد از temp. password admin123.
+    cam_11:
+      - rtsp://admin:admin123@192.168.51.11:554/Streaming/Channels/102
     # shargh_vorodi (.131) حذف شد — کار نمی‌کرد (به‌درخواست کاربر).
 
 cameras:
@@ -108,6 +111,12 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cam_112
+          input_args: preset-rtsp-restream
+          roles: [record]
+  cam_11:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_11
           input_args: preset-rtsp-restream
           roles: [record]
 

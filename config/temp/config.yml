@@ -60,8 +60,6 @@ go2rtc:
     # دوربین‌های جدید برای بررسی:
     cam_72:
       - rtsp://admin:1259110%40av@192.168.51.72:554/Streaming/Channels/102
-    cam_11:
-      - rtsp://admin:admin123@192.168.51.11:554/Streaming/Channels/102
     # cam_71 (.71) منتقل‌شده از mahoote — رمز جدید 1259110@av
     cam_71:
       - rtsp://admin:1259110%40av@192.168.51.71:554/Streaming/Channels/102
@@ -83,8 +81,6 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_101, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_72:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_72, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_11:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_11, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_71:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_71, input_args: preset-rtsp-restream, roles: [record] }] }
   # cam_95 منتقل شد به نمونه khanedari.
