@@ -49,8 +49,11 @@ go2rtc:
     # cam_99 (ظرف‌شویی/آشپزخانه) درست شد و برگشت به رستوران — password admin123
     cam_99:
       - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/102
+    vorodi_restoran:
+      - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/102
+    darb_posht_restoran:
+      - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/102
     # cam_81/cam_84 (بالای رستوران بیرون) منتقل شدند به mahoote (محوطه).
-    # .100/.101 برای بررسی در نمونه temp هستند.
 
 cameras:
   restoran_paeen:
@@ -69,5 +72,9 @@ cameras:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_19, input_args: preset-rtsp-restream, roles: [record] }] }
   cam_99:
     ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_99, input_args: preset-rtsp-restream, roles: [record] }] }
+  vorodi_restoran:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/vorodi_restoran, input_args: preset-rtsp-restream, roles: [record] }] }
+  darb_posht_restoran:
+    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/darb_posht_restoran, input_args: preset-rtsp-restream, roles: [record] }] }
 
 version: 0.16-0

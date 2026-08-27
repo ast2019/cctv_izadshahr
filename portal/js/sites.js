@@ -36,7 +36,7 @@ const SITES = [
     description: "رستوران، آشپزخانه، سردخانه و ظرف‌شویی",
     icon: "🍽️",
     port: 8975,
-    cameraCount: 8,
+    cameraCount: 10,
     enabled: true,
     healthPath: "/health/restaurant/",
     apiPath: "/restaurant/api/",
@@ -167,7 +167,7 @@ const SITES = [
     description: "دوربین‌های بررسی‌نشده",
     icon: "🧪",
     port: 8979,
-    cameraCount: 9,
+    cameraCount: 7,
     enabled: true,
     temporary: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
@@ -184,8 +184,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=74 در نمونه‌های دائمی + temp=9 (در حال بررسی) + dvr_cafe_ch10 planned=1
+  // active=76 در نمونه‌های دائمی + temp=7 (در حال بررسی) + dvr_cafe_ch10 planned=1
   total: 84,
-  inactive: 10, // 9 در نمونه موقت temp + dvr_cafe_ch10
+  inactive: 8, // 7 در نمونه موقت temp + dvr_cafe_ch10
   broken: 0, // در حال بررسی در نمونه temp
 };
