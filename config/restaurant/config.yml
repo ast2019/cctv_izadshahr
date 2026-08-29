@@ -46,13 +46,23 @@ go2rtc:
       - rtsp://admin:admin123@192.168.51.18:554/Streaming/Channels/102
     cam_19:
       - rtsp://admin:admin123@192.168.51.19:554/Streaming/Channels/102
-    # cam_99 (ظرف‌شویی/آشپزخانه) درست شد و برگشت به رستوران — password admin123
+    # دوربین‌های ICAMRA (.99/.100/.101) — تنظیم دوربین: main = 1080p H264،
+    # sub = VGA H264. دو نکته خاص این برند:
+    #
+    # ۱. مسیر `Channels/101` (main) صریح استفاده می‌شود. این برند مسیر
+    #    هایک‌ویژنی `Channels/102` را به‌عنوان ساب تفسیر نمی‌کند و روی آن هم
+    #    main می‌دهد؛ اتکا به `102` یعنی اگر رفتار دوربین عوض شود ضبط بی‌صدا
+    #    به VGA سقوط می‌کند. ساب واقعی روی `Streaming/Channels/2` است.
+    #
+    # ۲. `#media=video` اجباری است. این دوربین‌ها ترک صوتی دارند و بدون این
+    #    پارامتر go2rtc درگیر آن می‌شود، هیچ فریم ویدیویی نمی‌گیرد و watchdog
+    #    هر ۲۰ ثانیه ffmpeg را ری‌استارت می‌کند. صدا در پروژه استفاده نمی‌شود.
     cam_99:
-      - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/102
+      - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/101#media=video
     vorodi_restoran:
-      - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/102
+      - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/101#media=video
     darb_posht_restoran:
-      - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/102
+      - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/101#media=video
     # cam_81/cam_84 (بالای رستوران بیرون) منتقل شدند به mahoote (محوطه).
 
 cameras:

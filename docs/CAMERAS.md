@@ -58,6 +58,96 @@
 | `anbar` | `dvr_parking4_ch1` تا `ch3`, `dvr_parking4_ch5`, `cam_97` |
 | `temp` | `cam_21`, `cam_88`, `cam_96`, `cam_89`, `cam_90`, `cam_71`, `cam_72` |
 
+## دوربین‌های ICAMRA — دو نکته اجباری
+
+دوربین‌های `.99` (`cam_99`)، `.100` (`darb_posht_restoran`) و `.101`
+(`vorodi_restoran`) در نمونه `restaurant` از برند **ICAMRA** هستند و در SDP با
+`a=tool:WWW.ICAMRA.COM` شناسایی می‌شوند. تنظیم فعلی خود دوربین:
+
+- **main**: ‏`1920x1080` ‏H264 ‏25fps
+- **sub**: ‏`640x480` (VGA) ‏H264
+
+### نکته ۱ — مسیر `Channels/101` را صریح بنویس
+
+این برند مسیر هایک‌ویژنی `Streaming/Channels/102` را **به‌عنوان ساب‌استریم
+تفسیر نمی‌کند** و روی هر دو مسیر main را می‌دهد:
+
+```text
+.99   ch101 -> h264,1920,1080,25    ch102 -> h264,1920,1080,25
+.100  ch101 -> h264,1920,1080,25    ch102 -> h264,1920,1080,25
+.101  ch101 -> h264,1920,1080,25    ch102 -> h264,1920,1080,25
+```
+
+اتکا به `102` یک خطر پنهان است: اگر رفتار دوربین یا فریمور عوض شود، ضبط
+بی‌صدا به VGA سقوط می‌کند و کسی متوجه نمی‌شود. پس برای ضبط، `101` صریح نوشته
+می‌شود.
+
+ساب‌استریم واقعی VGA روی این مسیرها در دسترس است (برای پخش زنده کم‌مصرف):
+
+```text
+Streaming/Channels/2                  -> h264,640,480
+cam/realmonitor?channel=1&subtype=1   -> h264,640,480
+H264/ch1/sub/av_stream                -> h264,640,480
+```
+
+### نکته ۲ — `#media=video` اجباری است
+
+این دوربین‌ها ترک صوتی دارند (روی main یک `PCMU` دریافتی و یک `PCMA`
+backchannel). بدون `#media=video`، go2rtc درگیر ترک صوتی می‌شود، هیچ فریم
+ویدیویی نمی‌گیرد و این نشانه‌ها در لاگ ظاهر می‌شود:
+
+```text
+go2rtc  producer.go:170 > error="read tcp ...->192.168.51.10X:554: i/o timeout"
+watchdog.<cam>  No frames received from <cam> in 20 seconds. Exiting ffmpeg...
+frigate.record.maintainer  Discarding a corrupt recording segment
+```
+
+تغییر کدک از H265 به H264 این را حل **نمی‌کند** — ترک صوتی مستقل از کدک است و
+بعد از تغییر به H264 هم باقی ماند.
+
+### پیکربندی درست
+
+```yaml
+    cam_99:
+      - rtsp://admin:admin123@192.168.51.99:554/Streaming/Channels/101#media=video
+    vorodi_restoran:
+      - rtsp://admin:admin123@192.168.51.101:554/Streaming/Channels/101#media=video
+    darb_posht_restoran:
+      - rtsp://admin:admin123@192.168.51.100:554/Streaming/Channels/101#media=video
+```
+
+### شواهد تست
+
+در سطح go2rtc، استریم `.101` بدون `#media=video` مقدار `video:0KiB` و با آن
+`video:739KiB` داد — متغیر کاملاً جدا شد.
+
+وضعیت نهایی بعد از اعمال (main ‏1080p ‏H264 + `#media=video`):
+
+| دوربین | نرخ دریافت | فایل ضبط‌شده |
+|---|---:|---|
+| `cam_99` | ~2625 kbps | `h264,1920,1080` |
+| `darb_posht_restoran` | ~1903 kbps | `h264,1920,1080` |
+| `vorodi_restoran` | ~640 kbps | `h264,1920,1080` |
+
+صفر خطای `No frames` / `corrupt recording` / `i/o timeout` بعد از ری‌استارت.
+مقایسه: `restoran_paeen` و `cam_13` حدود ۱۳۰–۱۵۰ kbps هستند چون ساب‌استریم
+کم‌رزولوشن ضبط می‌کنند.
+
+### نکات تشخیصی برای دفعه بعد
+
+- **کدک را اول متهم نکن.** ‏`restoran_paeen` و `restoran_bala` هم H265 بودند و
+  همیشه سالم کار کرده‌اند.
+- **ffmpeg مستقیم گمراه‌کننده است.** ‏ffmpeg مستقیم به `.100/.101` همیشه تصویر
+  می‌گرفت، ولی go2rtc شکست می‌خورد. تشخیص باید در سطح go2rtc باشد:
+  `docker exec <container> curl -s http://127.0.0.1:1984/api/streams` و مقایسه
+  `receivers[].bytes` — استریم سالم بایت غیرصفر دارد.
+- **بعد از ری‌استارت حداقل ۹۰ ثانیه صبر کن.** در ثانیه‌های اول
+  (`health: starting`) هنوز مذاکره RTSP تمام نشده و ممکن است اشتباهاً
+  «قطع» به نظر برسد.
+
+صدا در هیچ‌کدام از نمونه‌ها استفاده نمی‌شود، پس حذف آن هیچ قابلیتی را از بین
+نمی‌برد.
+
 ## DVRها
 
 ### DVR کافه — `192.168.51.204`

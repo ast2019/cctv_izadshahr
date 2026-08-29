@@ -1,6 +1,5 @@
 ---
-description: Frigate multi-instance project rules for cctv_izadshahr
-alwaysApply: true
+inclusion: always
 ---
 
 # cctv_izadshahr — Project Rules
