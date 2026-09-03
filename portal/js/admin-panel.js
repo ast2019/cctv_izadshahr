@@ -63,6 +63,72 @@
     return map[ev] || esc(ev);
   }
 
+  function verdictLabel(v) {
+    const map = {
+      ok: "سالم",
+      starting: "در حال بالا آمدن",
+      empty: "بدون دوربین",
+      unresponsive: "هنگ / بی‌پاسخ",
+      dead_video: "بدون تصویر",
+    };
+    return map[v] || esc(v || "—");
+  }
+
+  function renderWatchdog(data) {
+    if (!data || data.available === false) {
+      return '<p class="admin-empty">watchdog هنوز گزارشی ننوشته — سرویس frigate-watchdog را بالا بیاورید.</p>';
+    }
+    const inst = data.instances || [];
+    const rows = inst
+      .map(
+        (i) => `
+      <tr>
+        <td dir="ltr">${esc(i.id)}</td>
+        <td><span class="wd-verdict wd-verdict--${esc(i.verdict)}">${verdictLabel(
+          i.verdict
+        )}</span></td>
+        <td>${faNum(i.live || 0)} / ${faNum(i.cameras || 0)}</td>
+        <td>${faNum(i.consecutive_bad || 0)}</td>
+        <td>${fmtTs(i.last_restart)}</td>
+        <td>${i.detail ? esc(i.detail) : "—"}</td>
+      </tr>`
+      )
+      .join("");
+    const actions = (data.recent_actions || [])
+      .slice()
+      .reverse()
+      .slice(0, 5)
+      .map(
+        (a) =>
+          `<li><span dir="ltr">${fmtTs(a.ts)}</span> — ری‌استارت <b dir="ltr">${esc(
+            a.target
+          )}</b> (${esc(a.reason || "")})</li>`
+      )
+      .join("");
+    const portal = data.portal || {};
+    const mass = data.mass_outage
+      ? '<p class="status-alert status-alert--warn">قطع گسترده تشخیص داده شد؛ این دور ری‌استارت دسته‌جمعی انجام نشد.</p>'
+      : "";
+    return `
+      ${mass}
+      <p class="admin-watchdog-meta">آخرین چک: ${fmtTs(data.updated_at)} · پورتال: ${verdictLabel(
+        portal.verdict
+      )}</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>بخش</th><th>وضعیت</th><th>زنده</th><th>خطای پشت‌سرهم</th><th>آخرین ری‌استارت</th><th>جزئیات</th></tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="6">—</td></tr>'}</tbody>
+        </table>
+      </div>
+      ${
+        actions
+          ? `<ul class="admin-watchdog-actions">${actions}</ul>`
+          : '<p class="admin-empty">هنوز ری‌استارت خودکاری ثبت نشده است.</p>'
+      }`;
+  }
+
   /** Camera IP from the generated map (config-derived). "" if unknown. */
   function camIp(site, camera) {
     try {
@@ -289,15 +355,19 @@
     panel.hidden = false;
 
     const authEl = document.getElementById("admin-auth-log");
+    const wdEl = document.getElementById("admin-watchdog");
     if (authEl) authEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
+    if (wdEl) wdEl.innerHTML = '<p class="admin-empty">در حال بارگذاری…</p>';
 
     try {
-      const [audit, broken, camEvents] = await Promise.all([
+      const [audit, broken, camEvents, watchdog] = await Promise.all([
         fetchJson(`/api/audit/?limit=${AUTH_LIMIT}`),
         fetchJson("/api/cameras/broken/"),
         fetchJson(`/api/cameras/events/?limit=${EVENTS_LIMIT}`),
+        fetchJson("/api/watchdog/").catch(() => ({ available: false })),
       ]);
       if (authEl) authEl.innerHTML = renderAuthTable(audit.events || []);
+      if (wdEl) wdEl.innerHTML = renderWatchdog(watchdog);
       _broken = broken.cameras || [];
       _camEvents = camEvents.events || [];
       bindCameraControls();

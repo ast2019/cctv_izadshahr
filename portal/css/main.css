@@ -672,6 +672,49 @@ body {
   margin-bottom: 0.65rem;
 }
 
+.admin-block-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: -0.25rem 0 0.75rem;
+}
+
+.admin-watchdog-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.65rem;
+}
+
+.admin-watchdog-actions {
+  margin: 0.75rem 0 0;
+  padding-inline-start: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.wd-verdict {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.wd-verdict--ok {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.wd-verdict--starting,
+.wd-verdict--empty {
+  color: #fdba74;
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.wd-verdict--unresponsive,
+.wd-verdict--dead_video {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+}
+
 .admin-block-head {
   display: flex;
   align-items: center;

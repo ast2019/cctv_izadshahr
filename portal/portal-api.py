@@ -18,6 +18,7 @@ import time
 PROC = "/host/proc"
 DB_PATH = Path(os.environ.get("PORTAL_DB", "/data/portal.db"))
 SNAP_DIR = Path(os.environ.get("PORTAL_SNAP_DIR", "/data/snapshots"))
+WATCHDOG_STATUS = Path(os.environ.get("WATCHDOG_STATUS", "/data/watchdog/status.json"))
 LOAD_RATIO_LIMIT = 0.5
 MEM_PERCENT_LIMIT = 30.0
 # Delete auth + camera event history older than this many days.
@@ -512,6 +513,21 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/snapshots":
             self._json(200, get_manifest())
+            return
+
+        if path == "/api/watchdog":
+            try:
+                if not WATCHDOG_STATUS.is_file():
+                    self._json(200, {"available": False})
+                    return
+                data = json.loads(WATCHDOG_STATUS.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    self._json(200, {"available": False})
+                    return
+                data.setdefault("available", True)
+                self._json(200, data)
+            except Exception as exc:
+                self._json(500, {"error": str(exc)})
             return
 
         if path.startswith("/api/snapshots/file/"):

@@ -18,3 +18,5 @@ jobs:
             python3 -c "import sys, yaml; yaml.safe_load(open(sys.argv[1]))" "$cfg"
             echo "ok: $cfg"
           done
+      - name: Watchdog decision tests
+        run: python3 -m unittest scripts/test_frigate_watchdog.py -v
