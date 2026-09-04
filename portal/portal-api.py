@@ -8,10 +8,13 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
+from http.cookies import SimpleCookie
 import json
 import os
 import random
+import secrets
 import sqlite3
+import ssl
 import threading
 import time
 
@@ -23,6 +26,37 @@ LOAD_RATIO_LIMIT = 0.5
 MEM_PERCENT_LIMIT = 30.0
 # Delete auth + camera event history older than this many days.
 RETENTION_DAYS = int(os.environ.get("PORTAL_RETENTION_DAYS", "30"))
+SESSION_COOKIE = "portal_session"
+SESSION_MAX_AGE = 2592000  # 30 days
+_SSL_CTX = ssl._create_unverified_context()
+# Password check only — does not create Frigate cookies. Try every recording
+# instance so a user that exists on any synced DB can log into the portal.
+AUTH_INSTANCE_IDS = (
+    "cafe",
+    "center11",
+    "center22",
+    "restaurant",
+    "sahel",
+    "villa",
+    "mahoote",
+    "tasisat",
+    "entezamat",
+    "anbar",
+    "khanedari",
+)
+
+
+def auth_login_urls() -> list[str]:
+    primary = os.environ.get("FRIGATE_AUTH_URL", "").strip()
+    urls = [primary] if primary else []
+    for name in AUTH_INSTANCE_IDS:
+        url = f"https://frigate-{name}:8971/api/login"
+        if url not in urls:
+            urls.append(url)
+    return urls
+
+
+AUTH_LOGIN_URLS = auth_login_urls()
 
 # Internal Frigate API (port 5000, no auth) — docker network hostnames
 FRIGATE_SOURCES = [
@@ -151,6 +185,14 @@ def init_db():
                 );
                 CREATE INDEX IF NOT EXISTS idx_camera_events_ts ON camera_events(ts DESC);
                 CREATE INDEX IF NOT EXISTS idx_camera_events_cam ON camera_events(camera);
+
+                CREATE TABLE IF NOT EXISTS portal_sessions (
+                  token TEXT PRIMARY KEY,
+                  username TEXT NOT NULL,
+                  created_at TEXT NOT NULL,
+                  expires_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_portal_sessions_exp ON portal_sessions(expires_at);
                 """
             )
             conn.commit()
@@ -168,8 +210,9 @@ def purge_old_data(days=RETENTION_DAYS):
         try:
             a = conn.execute("DELETE FROM auth_events WHERE ts < ?", (cutoff,)).rowcount
             e = conn.execute("DELETE FROM camera_events WHERE ts < ?", (cutoff,)).rowcount
+            s = conn.execute("DELETE FROM portal_sessions WHERE expires_at < ?", (cutoff,)).rowcount
             conn.commit()
-            return {"auth_events": a, "camera_events": e, "cutoff": cutoff}
+            return {"auth_events": a, "camera_events": e, "sessions": s, "cutoff": cutoff}
         finally:
             conn.close()
 
@@ -198,6 +241,110 @@ def insert_auth_event(event, username, ip, user_agent, success=True, detail=None
             return {"ok": True, "ts": ts}
         finally:
             conn.close()
+
+
+def cookie_session_token(handler: BaseHTTPRequestHandler) -> str | None:
+    raw = handler.headers.get("Cookie") or ""
+    jar = SimpleCookie()
+    try:
+        jar.load(raw)
+    except Exception:
+        return None
+    morsel = jar.get(SESSION_COOKIE)
+    if not morsel or not morsel.value:
+        return None
+    return morsel.value.strip()
+
+
+def create_portal_session(username: str) -> str:
+    token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    exp = now + timedelta(seconds=SESSION_MAX_AGE)
+    with _db_lock:
+        conn = db_connect()
+        try:
+            conn.execute(
+                """
+                INSERT INTO portal_sessions (token, username, created_at, expires_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (token, username, now.isoformat(), exp.isoformat()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    return token
+
+
+def lookup_portal_session(token: str | None) -> str | None:
+    if not token:
+        return None
+    now = datetime.now(timezone.utc).isoformat()
+    with _db_lock:
+        conn = db_connect()
+        try:
+            row = conn.execute(
+                """
+                SELECT username FROM portal_sessions
+                WHERE token=? AND expires_at > ?
+                """,
+                (token, now),
+            ).fetchone()
+            return row["username"] if row else None
+        finally:
+            conn.close()
+
+
+def delete_portal_session(token: str | None) -> None:
+    if not token:
+        return
+    with _db_lock:
+        conn = db_connect()
+        try:
+            conn.execute("DELETE FROM portal_sessions WHERE token=?", (token,))
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def session_cookie_header(token: str, clear: bool = False) -> str:
+    domain = os.environ.get("PORTAL_COOKIE_DOMAIN", "").strip()
+    domain_part = f"; Domain={domain}" if domain else ""
+    if clear:
+        return (
+            f"{SESSION_COOKIE}=; Path=/{domain_part}; HttpOnly; SameSite=Lax; Max-Age=0"
+        )
+    return (
+        f"{SESSION_COOKIE}={token}; Path=/{domain_part}; HttpOnly; SameSite=Lax; "
+        f"Max-Age={SESSION_MAX_AGE}"
+    )
+
+
+def verify_frigate_password(username: str, password: str) -> str:
+    """Return 'ok', 'unauthorized', or 'unavailable'."""
+    payload = json.dumps({"user": username, "password": password}).encode("utf-8")
+    saw_unauthorized = False
+    for url in AUTH_LOGIN_URLS:
+        req = Request(
+            url,
+            data=payload,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "portal-api/login",
+            },
+        )
+        try:
+            with urlopen(req, timeout=8, context=_SSL_CTX) as resp:
+                if 200 <= resp.status < 300:
+                    return "ok"
+        except HTTPError as exc:
+            if exc.code in (401, 403):
+                saw_unauthorized = True
+                continue
+        except (URLError, TimeoutError, OSError):
+            continue
+    return "unauthorized" if saw_unauthorized else "unavailable"
 
 
 def list_auth_events(limit=50):
@@ -459,11 +606,14 @@ def read_json(handler: BaseHTTPRequestHandler):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _json(self, code, payload):
+    def _json(self, code, payload, extra_headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        if extra_headers:
+            for key, val in extra_headers:
+                self.send_header(key, val)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -486,6 +636,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, host_snapshot())
             except Exception as exc:
                 self._json(500, {"error": str(exc)})
+            return
+
+        if path == "/api/session":
+            user = lookup_portal_session(cookie_session_token(self))
+            if not user:
+                self._json(401, {"ok": False})
+                return
+            self._json(200, {"ok": True, "username": user})
             return
 
         if path == "/api/audit":
@@ -552,6 +710,67 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+
+        if path == "/api/portal-login":
+            data = read_json(self)
+            if data is None:
+                self._json(400, {"error": "invalid json"})
+                return
+            username = str(data.get("username") or data.get("user") or "").strip()[:80]
+            password = str(data.get("password") or "")
+            if not username or not password:
+                self._json(400, {"error": "username and password required"})
+                return
+            result = verify_frigate_password(username, password)
+            if result == "ok":
+                token = create_portal_session(username)
+                insert_auth_event(
+                    "login",
+                    username,
+                    client_ip(self),
+                    self.headers.get("User-Agent", ""),
+                    True,
+                    "portal session",
+                )
+                self._json(
+                    200,
+                    {"ok": True, "username": username},
+                    extra_headers=[("Set-Cookie", session_cookie_header(token))],
+                )
+                return
+            insert_auth_event(
+                "login_failed",
+                username,
+                client_ip(self),
+                self.headers.get("User-Agent", ""),
+                False,
+                result,
+            )
+            if result == "unauthorized":
+                self._json(401, {"ok": False, "error": "bad credentials"})
+            else:
+                self._json(503, {"ok": False, "error": "auth backend unavailable"})
+            return
+
+        if path == "/api/portal-logout":
+            token = cookie_session_token(self)
+            user = lookup_portal_session(token) or ""
+            delete_portal_session(token)
+            if user:
+                insert_auth_event(
+                    "logout",
+                    user,
+                    client_ip(self),
+                    self.headers.get("User-Agent", ""),
+                    True,
+                    "portal session",
+                )
+            self._json(
+                200,
+                {"ok": True},
+                extra_headers=[("Set-Cookie", session_cookie_header("", clear=True))],
+            )
+            return
 
         if path == "/api/audit":
             data = read_json(self)

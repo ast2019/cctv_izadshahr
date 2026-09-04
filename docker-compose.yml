@@ -10,7 +10,7 @@ x-frigate-common: &frigate-common
   image: ghcr.io/blakeblackshear/frigate:0.16.3
   restart: unless-stopped
   stop_grace_period: 30s
-  shm_size: "1gb"   # enough for ~13 cameras; tmpfs grows on demand up to this cap
+  shm_size: "2gb"   # ~80MB/cam from 1gb≈13 cams; 2gb covers 10-cam instances with headroom
   tmpfs:
     - /tmp/cache
   logging:
@@ -103,6 +103,7 @@ services:
   frigate-mahoote:
     <<: *frigate-common
     container_name: frigate-mahoote
+    shm_size: "3gb"   # 20 cameras — 1gb was sized for ~13
     volumes:
       - ./config/mahoote:/config
       - ./media/mahoote:/media/frigate
@@ -174,7 +175,7 @@ services:
   frigate-temp:
     <<: *frigate-common
     container_name: frigate-temp
-    shm_size: "2gb"   # ~37 camera stream (temporary)
+    shm_size: "512mb"   # no live cameras; keep a small container only
     volumes:
       - ./config/temp:/config
       - ./media/temp:/media/frigate
