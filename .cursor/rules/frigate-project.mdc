@@ -70,7 +70,11 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
 
 ## UI auth (separate from camera RTSP)
 
-- Frigate UI users live in `config/<instance>/frigate.db` per instance.
+- Portal login is a single HttpOnly cookie (`portal_session`). nginx
+  `auth_request`s it, then proxies every site to Frigate port `5000`.
+- Password is checked against `frigate-cafe:8971` (fallback center11/restaurant).
+- Frigate UI users still live in `config/<instance>/frigate.db` for that check
+  and for anyone opening published `897x` ports directly.
 - On first boot, admin password is random and printed in logs:
   `docker compose logs <service> 2>&1 | grep -i password`
 - Reset admin: add `auth: { reset_admin_password: true }` to config, restart, read log, remove flag.
