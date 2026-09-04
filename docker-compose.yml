@@ -185,6 +185,41 @@ services:
       - "8571:8555/tcp"
       - "8571:8555/udp"
 
+  # Auto-recover hung Frigate / portal when the process is up but video is dead.
+  # Needs the Docker socket to restart containers by name (not a host cron).
+  frigate-watchdog:
+    image: python:3.12-alpine
+    container_name: frigate-watchdog
+    restart: unless-stopped
+    command: ["python3", "/app/frigate_watchdog.py"]
+    environment:
+      DOCKER_SOCK: /var/run/docker.sock
+      WATCHDOG_DATA: /data
+      PORTAL_HEALTH_URL: http://portal/health/cafe/
+    volumes:
+      - ./scripts/frigate_watchdog.py:/app/frigate_watchdog.py:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/watchdog:/data
+    depends_on:
+      - portal
+      - frigate-cafe
+      - frigate-center11
+      - frigate-center22
+      - frigate-restaurant
+      - frigate-sahel
+      - frigate-villa
+      - frigate-mahoote
+      - frigate-tasisat
+      - frigate-entezamat
+      - frigate-anbar
+      - frigate-khanedari
+      - frigate-temp
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
   # Host metrics + SQLite audit log (login/logout)
   portal-metrics:
     image: python:3.12-alpine
@@ -193,9 +228,11 @@ services:
     command: ["python3", "/app/portal-api.py"]
     environment:
       PORTAL_DB: /data/portal.db
+      WATCHDOG_STATUS: /data/watchdog/status.json
     volumes:
       - ./portal/portal-api.py:/app/portal-api.py:ro
       - ./data/portal:/data
+      - ./data/watchdog:/data/watchdog:ro
       - /proc:/host/proc:ro
     expose:
       - "9090"
