@@ -78,7 +78,7 @@ const SITES = [
     description: "محوطه و ژنراتور",
     icon: "🌳",
     port: 8978,
-    cameraCount: 19,
+    cameraCount: 20,
     enabled: true,
     healthPath: "/health/mahoote/",
     apiPath: "/mahoote/api/",
@@ -92,7 +92,7 @@ const SITES = [
     description: "پارکینگ‌ها و موتورخانه",
     icon: "🅿️",
     port: 8974,
-    cameraCount: 9,
+    cameraCount: 10,
     enabled: true,
     healthPath: "/health/center22/",
     apiPath: "/center22/api/",
@@ -159,16 +159,16 @@ const SITES = [
     cssClass: "card--active",
   },
   {
-    // موقت — دوربین‌های باقی‌مانده برای بررسی. بعد از تعیین تکلیف حذف شود.
+    // موقت — دوربین‌های باقی‌مانده غیرفعال‌اند.
     id: "temp",
     slug: "temp",
     title: "موقت — بررسی دوربین‌ها",
     titleEn: "Temporary — Review",
-    description: "دوربین‌های بررسی‌نشده",
+    description: "دوربین‌های بررسی‌نشده (غیرفعال)",
     icon: "🧪",
     port: 8979,
-    cameraCount: 7,
-    enabled: true,
+    cameraCount: 0,
+    enabled: false,
     temporary: true,
     authDisabled: true, // از پورت 5000 بدون لاگین سرو می‌شود
     healthPath: "/health/temp/",
@@ -184,8 +184,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=76 در نمونه‌های دائمی + temp=7 (در حال بررسی) + dvr_cafe_ch10 planned=1
+  // active=78 در نمونه‌های دائمی + temp disabled=5 + dvr_cafe_ch10 planned=1
   total: 84,
-  inactive: 8, // 7 در نمونه موقت temp + dvr_cafe_ch10
-  broken: 0, // در حال بررسی در نمونه temp
+  inactive: 6, // 5 در نمونه موقت temp (غیرفعال) + dvr_cafe_ch10
+  broken: 0,
 };

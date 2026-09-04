@@ -1,5 +1,6 @@
 (function () {
   const SESSION_KEY = "cctv_portal_session";
+  const REAUTH_KEY = "cctv_portal_reauth";
   const SESSION_DAYS = 30;
   const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
   const CSRF_HEADER = { "X-CSRF-TOKEN": "1" };
@@ -55,6 +56,34 @@
     return !!getSession();
   }
 
+  function saveReauth(user, password) {
+    try {
+      sessionStorage.setItem(REAUTH_KEY, JSON.stringify({ user, password }));
+    } catch {
+      /* private mode / quota */
+    }
+  }
+
+  function getReauth() {
+    try {
+      const raw = sessionStorage.getItem(REAUTH_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data?.user || !data?.password) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearReauth() {
+    try {
+      sessionStorage.removeItem(REAUTH_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
   function saveSession(user) {
     localStorage.setItem(
       SESSION_KEY,
@@ -65,6 +94,7 @@
   function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
+    clearReauth();
   }
 
   async function logAuthEvent(event, username, success = true, detail = null) {
@@ -240,9 +270,16 @@
     // authDisabled sites are served from Frigate's unauthenticated port (5000)
     // — never send them credentials, they open without any login.
     const enabled = SITES.filter((s) => s.enabled && !s.authDisabled);
-    const results = [];
-    for (const site of enabled) {
-      results.push(await loginSite(site, username, password));
+    let results = await Promise.all(
+      enabled.map((site) => loginSite(site, username, password))
+    );
+    const firstFail = results.filter((r) => !r.ok);
+    if (firstFail.length) {
+      const retried = await Promise.all(
+        firstFail.map((r) => loginSite(r.site, username, password))
+      );
+      const byId = Object.fromEntries(retried.map((r) => [r.site.id, r]));
+      results = results.map((r) => (r.ok ? r : byId[r.site.id] || r));
     }
     const failed = results.filter((r) => !r.ok);
     if (failed.length === results.length) {
@@ -259,6 +296,7 @@
       throw new Error(`ورود ناموفق: ${failed.map((f) => f.site.title).join("، ")}`);
     }
     saveSession(username);
+    saveReauth(username, password);
     await logAuthEvent(
       "login",
       username,
@@ -293,16 +331,12 @@
 
     const sess = getSession();
     if (!sess) return "unauthorized";
-    const account =
-      typeof PORTAL_AUTH !== "undefined"
-        ? Object.values(PORTAL_AUTH).find((a) => a.user === sess.user)
-        : null;
-    // Passwords are no longer stored client-side (see auth-config.js), so we
-    // can't silently re-login. Degrade gracefully: keep the portal session and
-    // let that Frigate show its own login page only if it truly needs one.
-    if (!account || !account.pass) return false;
+    const reauth = getReauth();
+    const user = reauth?.user || sess.user;
+    const pass = reauth?.password;
+    if (!user || !pass) return false;
 
-    const res = await loginSite(site, account.user, account.pass);
+    const res = await loginSite(site, user, pass);
     if (res.status === 401) return "unauthorized";
     return res.ok;
   }
@@ -434,9 +468,7 @@
     });
   }
 
-  /** Before opening Frigate UI, refresh THAT site's cookie if needed.
-   *  Best-effort: navigation always proceeds unless credentials are
-   *  explicitly rejected — never blocked by another (offline) site. */
+  /** Before opening Frigate UI, refresh THAT site's cookie if needed. */
   function bindPanelGuards() {
     document.querySelectorAll("a.card[href]:not([href='#'])").forEach((el) => {
       el.addEventListener("click", async (e) => {
@@ -447,12 +479,21 @@
         e.preventDefault();
         el.classList.add("card--busy");
         try {
-          // Best-effort: refresh THIS site's cookie if we can, then ALWAYS
-          // navigate. A single instance that rejects the stored credentials
-          // (offline, or a new Frigate whose users aren't synced yet) must
-          // never trap the user on the portal — that Frigate shows its own
-          // login page only if it truly needs one.
-          if (site) await withTimeout(ensureSiteAuth(site), 4000, true);
+          if (site) {
+            const state = await withTimeout(ensureSiteAuth(site), 8000, false);
+            if (state === "unauthorized") {
+              forceRelogin();
+              return;
+            }
+            if (state !== true) {
+              if (!getReauth()) {
+                showLoginModal();
+                return;
+              }
+              const retry = await withTimeout(ensureSiteAuth(site), 8000, false);
+              if (retry !== true) return;
+            }
+          }
           window.location.href = href;
         } finally {
           el.classList.remove("card--busy");
