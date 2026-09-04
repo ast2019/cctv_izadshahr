@@ -13,8 +13,10 @@ from frigate_watchdog import (
     classify_probe,
     hourly_restart_count,
     mass_outage,
+    mass_outage_verdicts,
     pick_snap_targets,
     restart_decision,
+    REVIEW_INSTANCE_IDS,
 )
 
 
@@ -85,6 +87,27 @@ class ClassifyProbeTests(unittest.TestCase):
         )
         self.assertEqual(r["verdict"], "empty")
 
+    def test_temp_all_broken_is_review_not_hang(self):
+        r = classify_probe(
+            {
+                "api_ok": True,
+                "camera_names": ["cam_x", "cam_y"],
+                "live_names": [],
+                "snapshots": [{"ok": False}, {"ok": False}],
+                "uptime_sec": 400,
+            },
+            grace_sec=90,
+            ignore_dead_video=True,
+        )
+        self.assertEqual(r["verdict"], "review")
+
+    def test_temp_api_hang_still_unresponsive(self):
+        r = classify_probe(
+            {"api_ok": False, "api_error": "timeout"},
+            ignore_dead_video=True,
+        )
+        self.assertEqual(r["verdict"], "unresponsive")
+
 
 class RestartDecisionTests(unittest.TestCase):
     def test_needs_consecutive_failures(self):
@@ -152,6 +175,16 @@ class RestartDecisionTests(unittest.TestCase):
         )
         self.assertFalse(ok)
 
+    def test_review_never_restarts(self):
+        ok, _ = restart_decision(
+            verdict="review",
+            consecutive_bad=9,
+            last_restart=None,
+            restarts=[],
+            now_ts=1,
+        )
+        self.assertFalse(ok)
+
 
 class MassOutageTests(unittest.TestCase):
     def test_single_hang_is_not_mass(self):
@@ -164,6 +197,20 @@ class MassOutageTests(unittest.TestCase):
                 ratio=0.5,
             )
         )
+
+    def test_temp_dead_does_not_count_as_mass(self):
+        self.assertEqual(REVIEW_INSTANCE_IDS, frozenset({"temp"}))
+        probes = [
+            {"id": "cafe", "verdict": "ok"},
+            {"id": "center11", "verdict": "ok"},
+            {"id": "temp", "verdict": "review"},
+        ]
+        # All recording instances ok; temp broken must not look like an outage.
+        self.assertFalse(mass_outage(mass_outage_verdicts(probes)))
+
+    def test_temp_unresponsive_does_not_trigger_mass_alone(self):
+        probes = [{"id": "cafe", "verdict": "ok"}, {"id": "temp", "verdict": "unresponsive"}]
+        self.assertFalse(mass_outage(mass_outage_verdicts(probes)))
 
 
 class SnapTargetTests(unittest.TestCase):

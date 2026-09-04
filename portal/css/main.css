@@ -704,7 +704,8 @@ body {
 }
 
 .wd-verdict--starting,
-.wd-verdict--empty {
+.wd-verdict--empty,
+.wd-verdict--review {
   color: #fdba74;
   background: rgba(234, 179, 8, 0.12);
 }

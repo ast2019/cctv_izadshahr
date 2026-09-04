@@ -11,8 +11,7 @@ Safety:
   * consecutive failures before restart
   * per-instance cooldown and hourly restart cap
   * never mass-restart every Frigate in one cycle (likely a host/network outage)
-  * one dead camera is not a hang — only "API dead" or "zero live frames +
-    zero JPEGs on a configured instance"
+  * the `temp` review instance is never treated as a hang (broken cams expected)
 """
 from __future__ import annotations
 
@@ -40,8 +39,20 @@ INSTANCES = [
     {"id": "entezamat", "container": "frigate-entezamat", "base": "http://frigate-entezamat:5000"},
     {"id": "anbar", "container": "frigate-anbar", "base": "http://frigate-anbar:5000"},
     {"id": "khanedari", "container": "frigate-khanedari", "base": "http://frigate-khanedari:5000"},
-    {"id": "temp", "container": "frigate-temp", "base": "http://frigate-temp:5000"},
+    {
+        "id": "temp",
+        "container": "frigate-temp",
+        "base": "http://frigate-temp:5000",
+        # Scratch instance for unidentified/broken cams — never treat as a hang.
+        "ignore_dead_video": True,
+        "exclude_from_mass_outage": True,
+    },
 ]
+
+# Cameras here are expected to be broken/offline. Zero video is not a system hang.
+REVIEW_INSTANCE_IDS = frozenset(
+    inst["id"] for inst in INSTANCES if inst.get("ignore_dead_video")
+)
 
 PORTAL_CONTAINER = "cctv-portal"
 PORTAL_HEALTH_URL = os.environ.get("PORTAL_HEALTH_URL", "http://portal/health/cafe/")
@@ -120,7 +131,11 @@ def service_uptime_sec(stats: dict) -> float:
         return 0.0
 
 
-def classify_probe(probe: dict, grace_sec: int = STARTUP_GRACE_SEC) -> dict:
+def classify_probe(
+    probe: dict,
+    grace_sec: int = STARTUP_GRACE_SEC,
+    ignore_dead_video: bool = False,
+) -> dict:
     """Turn a probe result into a verdict. Pure — used by tests."""
     if not probe.get("api_ok"):
         return {
@@ -147,6 +162,12 @@ def classify_probe(probe: dict, grace_sec: int = STARTUP_GRACE_SEC) -> dict:
         return {
             "verdict": "starting",
             "detail": f"uptime {int(uptime)}s < grace {grace_sec}s",
+        }
+
+    if ignore_dead_video:
+        return {
+            "verdict": "review",
+            "detail": f"0/{len(names)} live · review instance (broken cams ignored)",
         }
 
     return {
@@ -193,6 +214,16 @@ def mass_outage(verdicts: list[str], ratio: float = MASS_FAIL_RATIO) -> bool:
     if len(verdicts) < 2:
         return False
     return len(hang) / len(verdicts) >= ratio
+
+
+def mass_outage_verdicts(probes: list[dict]) -> list[str]:
+    """Exclude review/temp instances so broken scratch cams cannot look like a host outage."""
+    out = []
+    for p in probes:
+        if p.get("id") in REVIEW_INSTANCE_IDS or p.get("exclude_from_mass_outage"):
+            continue
+        out.append(p.get("verdict") or "unresponsive")
+    return out
 
 
 def pick_snap_targets(camera_names: list[str], live_names: list[str], limit: int) -> list[str]:
@@ -283,7 +314,9 @@ def probe_instance(inst: dict) -> dict:
         stats = http_get_json(f"{base}/api/stats", API_TIMEOUT)
     except Exception as exc:
         probe["api_error"] = f"{type(exc).__name__}: {exc}"
-        classified = classify_probe(probe)
+        classified = classify_probe(
+            probe, ignore_dead_video=bool(inst.get("ignore_dead_video"))
+        )
         probe.update(classified)
         return probe
 
@@ -304,7 +337,9 @@ def probe_instance(inst: dict) -> dict:
                 {"camera": name, "ok": False, "error": f"{type(exc).__name__}"}
             )
 
-    classified = classify_probe(probe)
+    classified = classify_probe(
+        probe, ignore_dead_video=bool(inst.get("ignore_dead_video"))
+    )
     probe.update(classified)
     return probe
 
@@ -391,11 +426,12 @@ def run_cycle(docker: DockerUnix, state: dict) -> dict:
                 }
             )
 
-    verdicts = [p["verdict"] for p in probes]
-    skip_mass = mass_outage(verdicts)
+    recording_verdicts = mass_outage_verdicts(probes)
+    skip_mass = mass_outage(recording_verdicts)
     if skip_mass:
         log(
-            f"mass outage ({sum(1 for v in verdicts if v in HANG_VERDICTS)}/{len(verdicts)} hung) "
+            f"mass outage ({sum(1 for v in recording_verdicts if v in HANG_VERDICTS)}/"
+            f"{len(recording_verdicts)} recording instances hung) "
             "— skip Frigate restarts this cycle"
         )
 
@@ -414,6 +450,9 @@ def run_cycle(docker: DockerUnix, state: dict) -> dict:
             restarts=st.get("restarts") or [],
             now_ts=now_ts,
         )
+        if sid in REVIEW_INSTANCE_IDS:
+            want = False
+            why = "review_instance_ignored"
 
         action = None
         if want and skip_mass:
@@ -467,7 +506,7 @@ def run_cycle(docker: DockerUnix, state: dict) -> dict:
                 "action": action or why,
             }
         )
-        if probe["verdict"] != "ok":
+        if probe["verdict"] in HANG_VERDICTS:
             log(f"{sid}: {probe['verdict']} — {probe['detail']} ({action or why})")
 
     portal = probe_portal()
@@ -480,7 +519,9 @@ def run_cycle(docker: DockerUnix, state: dict) -> dict:
         restarts=portal_state.get("restarts") or [],
         now_ts=now_ts,
     )
-    frigates_ok = sum(1 for v in verdicts if v == "ok")
+    frigates_ok = sum(
+        1 for p in probes if p.get("id") not in REVIEW_INSTANCE_IDS and p.get("verdict") == "ok"
+    )
     if want_portal and frigates_ok >= 2:
         try:
             docker.restart(PORTAL_CONTAINER)

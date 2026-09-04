@@ -4,13 +4,20 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.7.0";
+const PORTAL_VERSION = "1.7.1";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-09-04",
+    version: "1.7.1",
+    items: [
+      "نمونه موقت (temp) با دوربین‌های خراب دیگر به‌عنوان هنگ سیستم حساب نمی‌شود",
+    ],
+  },
   {
     date: "2026-09-03",
     version: "1.7.0",

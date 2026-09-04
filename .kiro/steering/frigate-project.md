@@ -53,7 +53,9 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
 11. **Hang recovery**: `frigate-watchdog` probes each instance `http://frigate-<id>:5000`
     (`/api/stats` + `latest.jpg`). Restart that container only after consecutive
     failures. Do not restart the whole stack. Skip mass-restart when most
-    instances fail together (host/network outage). See `scripts/frigate_watchdog.py`.
+    instances fail together (host/network outage). The `temp` instance is for
+    broken/unidentified cameras — zero video there is **not** a hang. See
+    `scripts/frigate_watchdog.py`.
 
 ## Portal frontend (portal/)
 
