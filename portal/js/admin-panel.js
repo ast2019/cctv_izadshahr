@@ -13,17 +13,9 @@
   }
 
   function isAdmin() {
-    try {
-      const raw = localStorage.getItem("cctv_portal_session");
-      if (!raw) return false;
-      const sess = JSON.parse(raw);
-      const adminUser =
-        (typeof PORTAL_AUTH !== "undefined" && PORTAL_AUTH?.admin?.user) || "admin";
-      if (!(sess?.at && Date.now() - sess.at <= 30 * 24 * 60 * 60 * 1000)) return false;
-      return sess?.user === adminUser;
-    } catch {
-      return false;
-    }
+    const adminUser =
+      (typeof PORTAL_AUTH !== "undefined" && PORTAL_AUTH?.admin?.user) || "admin";
+    return window.__PORTAL_USER === adminUser;
   }
 
   function faNum(n) {

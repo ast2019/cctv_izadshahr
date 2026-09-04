@@ -29,11 +29,34 @@ RETENTION_DAYS = int(os.environ.get("PORTAL_RETENTION_DAYS", "30"))
 SESSION_COOKIE = "portal_session"
 SESSION_MAX_AGE = 2592000  # 30 days
 _SSL_CTX = ssl._create_unverified_context()
-AUTH_LOGIN_URLS = [
-    os.environ.get("FRIGATE_AUTH_URL", "https://frigate-cafe:8971/api/login"),
-    "https://frigate-center11:8971/api/login",
-    "https://frigate-restaurant:8971/api/login",
-]
+# Password check only — does not create Frigate cookies. Try every recording
+# instance so a user that exists on any synced DB can log into the portal.
+AUTH_INSTANCE_IDS = (
+    "cafe",
+    "center11",
+    "center22",
+    "restaurant",
+    "sahel",
+    "villa",
+    "mahoote",
+    "tasisat",
+    "entezamat",
+    "anbar",
+    "khanedari",
+)
+
+
+def auth_login_urls() -> list[str]:
+    primary = os.environ.get("FRIGATE_AUTH_URL", "").strip()
+    urls = [primary] if primary else []
+    for name in AUTH_INSTANCE_IDS:
+        url = f"https://frigate-{name}:8971/api/login"
+        if url not in urls:
+            urls.append(url)
+    return urls
+
+
+AUTH_LOGIN_URLS = auth_login_urls()
 
 # Internal Frigate API (port 5000, no auth) — docker network hostnames
 FRIGATE_SOURCES = [
@@ -285,10 +308,15 @@ def delete_portal_session(token: str | None) -> None:
 
 
 def session_cookie_header(token: str, clear: bool = False) -> str:
+    domain = os.environ.get("PORTAL_COOKIE_DOMAIN", "").strip()
+    domain_part = f"; Domain={domain}" if domain else ""
     if clear:
-        return f"{SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+        return (
+            f"{SESSION_COOKIE}=; Path=/{domain_part}; HttpOnly; SameSite=Lax; Max-Age=0"
+        )
     return (
-        f"{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_MAX_AGE}"
+        f"{SESSION_COOKIE}={token}; Path=/{domain_part}; HttpOnly; SameSite=Lax; "
+        f"Max-Age={SESSION_MAX_AGE}"
     )
 
 

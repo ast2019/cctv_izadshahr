@@ -1,7 +1,7 @@
 (function () {
   const SESSION_KEY = "cctv_portal_session";
-  const SESSION_DAYS = 30;
-  const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
+  /** Username from the HttpOnly portal_session cookie — the only login token. */
+  let portalUser = null;
 
   /** Persian/Arabic digits → ASCII */
   function normalizeLogin(value) {
@@ -34,27 +34,17 @@
     });
   }
 
-  function getSession() {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return null;
-      const sess = JSON.parse(raw);
-      if (!sess?.at || Date.now() - sess.at > SESSION_MS) {
-        localStorage.removeItem(SESSION_KEY);
-        return null;
-      }
-      return sess;
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-  }
-
   function isLoggedIn() {
-    return !!getSession();
+    return !!portalUser;
   }
 
   function saveSession(user) {
+    portalUser = user || null;
+    window.__PORTAL_USER = portalUser;
+    if (!user) {
+      localStorage.removeItem(SESSION_KEY);
+      return;
+    }
     localStorage.setItem(
       SESSION_KEY,
       JSON.stringify({ user, at: Date.now() })
@@ -62,7 +52,15 @@
   }
 
   function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+    saveSession(null);
+  }
+
+  function safeNextPath() {
+    const next = new URLSearchParams(location.search).get("next");
+    if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+    if (next.includes("://") || next.includes("\\")) return null;
+    if (next.startsWith("/api") || next.startsWith("/internal")) return null;
+    return next;
   }
 
   function updateIntro() {
@@ -211,7 +209,7 @@
     }
     const data = await res.json().catch(() => ({}));
     saveSession(data.username || username);
-    return true;
+    return data.username || username;
   }
 
   async function portalLogout() {
@@ -243,6 +241,11 @@
       userBar.querySelector(".user-name").textContent = user;
     }
     updateIntro();
+    const next = safeNextPath();
+    if (next) {
+      window.location.assign(next);
+      return;
+    }
     await renderAllCards();
     if (window.AdminPanel) await window.AdminPanel.refresh();
   }
@@ -263,10 +266,9 @@
     const userBar = document.getElementById("user-bar");
     const logoutBtn = document.getElementById("logout-btn");
 
-    const sess = getSession();
-    if (sess && userBar) {
+    if (portalUser && userBar) {
       userBar.hidden = false;
-      userBar.querySelector(".user-name").textContent = sess.user || "";
+      userBar.querySelector(".user-name").textContent = portalUser;
     }
 
     form?.addEventListener("submit", async (e) => {
@@ -277,8 +279,8 @@
       const btn = form.querySelector('button[type="submit"]');
       btn.disabled = true;
       try {
-        await portalLogin(user, pass);
-        await afterLogin(user);
+        const loggedInAs = await portalLogin(user, pass);
+        await afterLogin(loggedInAs);
       } catch (err) {
         errEl.textContent = err.message || "خطا در ورود";
       } finally {
@@ -295,8 +297,6 @@
       showLoginModal();
       await renderAllCards();
     });
-
-    if (!isLoggedIn()) showLoginModal();
 
     document.getElementById("show-password")?.addEventListener("change", (e) => {
       const passInput = form?.password;
