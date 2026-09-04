@@ -4,13 +4,21 @@
  *   minor: new feature
  *   major: breaking change / redesign
  */
-const PORTAL_VERSION = "1.7.1";
+const PORTAL_VERSION = "1.7.2";
 
 /**
  * Changelog entries auto-hide 2 days after `date` (YYYY-MM-DD).
  * Keep newest first. Write in Persian, user-facing features only.
  */
 const CHANGELOG = [
+  {
+    date: "2026-09-04",
+    version: "1.7.2",
+    items: [
+      "ورود یکپارچه: بعد از لاگین پرتال، کافه / پذیرش / رستوران دیگر صفحه رمز جدا نشان نمی‌دهند",
+      "cam_96 به پارکینگ و cam_71 به محوطه منتقل شدند؛ بقیه دوربین‌های موقت غیرفعال‌اند",
+    ],
+  },
   {
     date: "2026-09-04",
     version: "1.7.1",

@@ -1,12 +1,7 @@
 # =============================================================================
-# TEMPORARY instance — دوربین‌های باقی‌مانده برای بررسی
-# بدون تصویر / نیاز به بررسی: cam_21, cam_85, cam_88, cam_96
-# برگردانده‌شده برای بررسی مجدد (قبلاً به‌عنوان خراب حذف شده بودند):
-#   cam_89, cam_90 (پارکینگ۳)
-# cam_95 (خانه‌داری) منتقل شد به نمونه khanedari.
-# .100 و .101 درست شدند و با نام‌های darb_posht_restoran / vorodi_restoran
-# به نمونه restaurant منتقل شدند.
-# (cam_99 درست شد و به رستوران منتقل شد؛ cam_112 اتاق سرور به center11 رفت.)
+# TEMPORARY instance — دوربین‌های باقی‌مانده غیرفعال‌اند (کاربر: disable).
+# cam_96 → center22 (پارکینگ). cam_71 → mahoote (محوطه).
+# غیرفعال: cam_21, cam_88, cam_89, cam_90, cam_72 (decode/record خاموش).
 # بعد از تعیین تکلیف این دوربین‌ها، کل نمونه temp حذف می‌شود.
 # =============================================================================
 mqtt:
@@ -17,13 +12,10 @@ auth:
   session_length: 2592000
   refresh_time: 1296000
 
-# تشخیص خاموش + fps پایین: Frigate استریم را برای motion/API همیشه decode می‌کند،
-# پس fps کم بار decode را به حداقل می‌رساند.
 detect:
   enabled: false
   fps: 3
 
-# هیچ دوربینی در temp نباید ضبط شود (قانون ثابت).
 record:
   enabled: false
 
@@ -35,48 +27,29 @@ birdseye:
 
 ffmpeg:
   global_args: -hide_banner -loglevel warning
-  # دوربین خراب هر ۲ دقیقه یک‌بار تلاش مجدد می‌کند (نه هر ۱۰ ثانیه) تا حلقه‌ی
-  # restart فشار الکی به سرور نیاورد.
   retry_interval: 120
   output_args:
     record: preset-record-generic
 
+# هیچ استریم فعالی نیست — دوربین‌های باقی‌مانده enabled: false تا بار CPU نیاورند.
 go2rtc:
-  streams:
-    cam_21:
-      - rtsp://admin:admin123@192.168.51.21:554/Streaming/Channels/102
-    cam_88:
-      - rtsp://admin:admin123@192.168.51.88:554/Streaming/Channels/102
-    cam_96:
-      - rtsp://admin:admin123@192.168.51.96:554/Streaming/Channels/102
-    # برگردانده‌شده برای بررسی مجدد — password admin123
-    cam_89:
-      - rtsp://admin:admin123@192.168.51.89:554/Streaming/Channels/102
-    cam_90:
-      - rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102
-    # cam_95 (خانه‌داری) منتقل شد به نمونه khanedari.
-    # دوربین‌های جدید برای بررسی:
-    cam_72:
-      - rtsp://admin:1259110%40av@192.168.51.72:554/Streaming/Channels/102
-    # cam_71 (.71) منتقل‌شده از mahoote — رمز جدید 1259110@av
-    cam_71:
-      - rtsp://admin:1259110%40av@192.168.51.71:554/Streaming/Channels/102
+  streams: {}
 
 cameras:
   cam_21:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_21, input_args: preset-rtsp-restream, roles: [record] }] }
+    enabled: false
+    ffmpeg: { inputs: [{ path: rtsp://admin:admin123@192.168.51.21:554/Streaming/Channels/102, roles: [record] }] }
   cam_88:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_88, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_96:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_96, input_args: preset-rtsp-restream, roles: [record] }] }
+    enabled: false
+    ffmpeg: { inputs: [{ path: rtsp://admin:admin123@192.168.51.88:554/Streaming/Channels/102, roles: [record] }] }
   cam_89:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_89, input_args: preset-rtsp-restream, roles: [record] }] }
+    enabled: false
+    ffmpeg: { inputs: [{ path: rtsp://admin:admin123@192.168.51.89:554/Streaming/Channels/102, roles: [record] }] }
   cam_90:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_90, input_args: preset-rtsp-restream, roles: [record] }] }
+    enabled: false
+    ffmpeg: { inputs: [{ path: rtsp://admin:admin123@192.168.51.90:554/Streaming/Channels/102, roles: [record] }] }
   cam_72:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_72, input_args: preset-rtsp-restream, roles: [record] }] }
-  cam_71:
-    ffmpeg: { inputs: [{ path: rtsp://127.0.0.1:8554/cam_71, input_args: preset-rtsp-restream, roles: [record] }] }
-  # cam_95 منتقل شد به نمونه khanedari.
+    enabled: false
+    ffmpeg: { inputs: [{ path: rtsp://admin:1259110%40av@192.168.51.72:554/Streaming/Channels/102, roles: [record] }] }
 
 version: 0.16-0
