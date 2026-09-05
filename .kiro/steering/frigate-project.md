@@ -76,6 +76,15 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
   `docker compose logs <service> 2>&1 | grep -i password`
 - Reset admin: add `auth: { reset_admin_password: true }` to config, restart, read log, remove flag.
 - Sync users across instances: `scripts/sync-frigate-users.sh` (requires running containers).
+- **Login fails / "wrong username or password"**: run `scripts/diag-portal-login.sh <user> <pass>`
+  on the server. It shows the users in each `frigate.db`, the `/api/login` status
+  per instance from the host **and** from inside `portal-metrics` (the path login
+  really uses), and the portal endpoint's answer. Every attempt is also traced in
+  `docker compose logs portal-metrics | grep '\[login\]'`, e.g.
+  `[login] user=ceo result=unauthorized cafe=401 sahel=timeout ...`.
+- A 401 from the portal means *some* instance rejected the password and none
+  accepted. If instances were unreachable the answer is only partial — the
+  response carries `unreachable` and the UI says so instead of blaming the user.
 - Standard viewer user: `ceo` / role `viewer` (password set by operator, not committed).
 
 ## Deploy workflow

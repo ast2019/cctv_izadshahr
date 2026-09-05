@@ -29,6 +29,10 @@ RETENTION_DAYS = int(os.environ.get("PORTAL_RETENTION_DAYS", "30"))
 SESSION_COOKIE = "portal_session"
 SESSION_MAX_AGE = 2592000  # 30 days
 _SSL_CTX = ssl._create_unverified_context()
+# Per-instance timeout and total budget for one login. nginx gives up at 60s,
+# so the whole password check must finish well before that.
+LOGIN_TIMEOUT = float(os.environ.get("PORTAL_LOGIN_TIMEOUT", "5"))
+LOGIN_DEADLINE = float(os.environ.get("PORTAL_LOGIN_DEADLINE", "25"))
 # Password check only — does not create Frigate cookies. Try every recording
 # instance so a user that exists on any synced DB can log into the portal.
 AUTH_INSTANCE_IDS = (
@@ -320,31 +324,76 @@ def session_cookie_header(token: str, clear: bool = False) -> str:
     )
 
 
-def verify_frigate_password(username: str, password: str) -> str:
-    """Return 'ok', 'unauthorized', or 'unavailable'."""
+def instance_of_url(url: str) -> str:
+    host = urlparse(url).hostname or url
+    return host[8:] if host.startswith("frigate-") else host
+
+
+def verify_frigate_password(username: str, password: str) -> dict:
+    """Ask every Frigate instance whether this user/password pair is valid.
+
+    Returns a report so a failure is never silent:
+      result   'ok' | 'unauthorized' | 'unavailable'
+      checked  ['cafe=200', 'center11=401', 'sahel=timeout', ...]
+      rejected number of instances that explicitly said 401/403
+      broken   number of instances that could not answer (down, timeout, 5xx)
+
+    'unauthorized' means at least one instance actively rejected the password
+    and none accepted it. When `broken` is also > 0 the answer is only partial:
+    the instance holding this account may simply have been unreachable, so the
+    caller must surface that instead of flatly blaming the password.
+    """
     payload = json.dumps({"user": username, "password": password}).encode("utf-8")
-    saw_unauthorized = False
+    checked: list[str] = []
+    rejected = 0
+    broken = 0
+    deadline = time.monotonic() + LOGIN_DEADLINE
+
     for url in AUTH_LOGIN_URLS:
+        name = instance_of_url(url)
+        if time.monotonic() >= deadline:
+            checked.append(f"{name}=skipped")
+            broken += 1
+            continue
         req = Request(
             url,
             data=payload,
             method="POST",
             headers={
                 "Content-Type": "application/json",
+                # Frigate's own UI sends this on every write; harmless elsewhere.
+                "X-CSRF-TOKEN": "1",
                 "User-Agent": "portal-api/login",
             },
         )
         try:
-            with urlopen(req, timeout=8, context=_SSL_CTX) as resp:
+            with urlopen(req, timeout=LOGIN_TIMEOUT, context=_SSL_CTX) as resp:
+                checked.append(f"{name}={resp.status}")
                 if 200 <= resp.status < 300:
-                    return "ok"
+                    return {
+                        "result": "ok",
+                        "checked": checked,
+                        "rejected": rejected,
+                        "broken": broken,
+                    }
+                broken += 1
         except HTTPError as exc:
+            checked.append(f"{name}={exc.code}")
             if exc.code in (401, 403):
-                saw_unauthorized = True
-                continue
-        except (URLError, TimeoutError, OSError):
-            continue
-    return "unauthorized" if saw_unauthorized else "unavailable"
+                rejected += 1
+            else:
+                broken += 1
+        except (URLError, TimeoutError, OSError) as exc:
+            reason = getattr(exc, "reason", exc) or exc
+            checked.append(f"{name}={type(exc).__name__}:{reason}"[:80])
+            broken += 1
+
+    return {
+        "result": "unauthorized" if rejected else "unavailable",
+        "checked": checked,
+        "rejected": rejected,
+        "broken": broken,
+    }
 
 
 def list_auth_events(limit=50):
@@ -721,7 +770,11 @@ class Handler(BaseHTTPRequestHandler):
             if not username or not password:
                 self._json(400, {"error": "username and password required"})
                 return
-            result = verify_frigate_password(username, password)
+            report = verify_frigate_password(username, password)
+            result = report["result"]
+            trace = " ".join(report["checked"])
+            # Always leave a trace: `docker compose logs portal-metrics`
+            print(f"[login] user={username} result={result} {trace}", flush=True)
             if result == "ok":
                 token = create_portal_session(username)
                 insert_auth_event(
@@ -730,7 +783,7 @@ class Handler(BaseHTTPRequestHandler):
                     client_ip(self),
                     self.headers.get("User-Agent", ""),
                     True,
-                    "portal session",
+                    trace,
                 )
                 self._json(
                     200,
@@ -744,12 +797,29 @@ class Handler(BaseHTTPRequestHandler):
                 client_ip(self),
                 self.headers.get("User-Agent", ""),
                 False,
-                result,
+                f"{result}: {trace}",
             )
             if result == "unauthorized":
-                self._json(401, {"ok": False, "error": "bad credentials"})
+                self._json(
+                    401,
+                    {
+                        "ok": False,
+                        "error": "bad credentials",
+                        # >0 means the answer is partial: some instance that may
+                        # hold this account never replied.
+                        "unreachable": report["broken"],
+                        "rejected": report["rejected"],
+                    },
+                )
             else:
-                self._json(503, {"ok": False, "error": "auth backend unavailable"})
+                self._json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": "auth backend unavailable",
+                        "unreachable": report["broken"],
+                    },
+                )
             return
 
         if path == "/api/portal-logout":
