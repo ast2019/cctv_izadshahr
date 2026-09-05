@@ -3,7 +3,7 @@
 #
 # Run ON THE SERVER, from anywhere:
 #   scripts/diag-portal-login.sh <user> <password>
-#   scripts/diag-portal-login.sh ceo 'Cctv1405'
+# Do NOT hardcode the password here — pass it on the command line.
 #
 # It walks the login path layer by layer and prints a verdict:
 #   1. which UI users actually exist in each config/<instance>/frigate.db
