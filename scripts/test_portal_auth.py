@@ -83,6 +83,94 @@ class AuthUrlTests(unittest.TestCase):
         self.assertNotIn("https://frigate-temp:8971/api/login", urls)
 
 
+class PasswordCheckTests(unittest.TestCase):
+    """The password check must never blame the user for a broken instance."""
+
+    @staticmethod
+    def stop(srv):
+        srv.shutdown()
+        srv.server_close()
+
+    @staticmethod
+    def stub(status: int):
+        """Start a one-off HTTP server answering /api/login with `status`."""
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import threading
+
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                self.send_response(status)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        return srv, f"http://127.0.0.1:{srv.server_address[1]}/api/login"
+
+    def test_accepts_when_any_instance_accepts(self):
+        api = load_portal_api()
+        bad, bad_url = self.stub(401)
+        good, good_url = self.stub(200)
+        try:
+            api.AUTH_LOGIN_URLS = [bad_url, good_url]
+            report = api.verify_frigate_password("ceo", "pw")
+        finally:
+            self.stop(bad)
+            self.stop(good)
+        self.assertEqual(report["result"], "ok")
+        self.assertEqual(report["broken"], 0)
+
+    def test_all_rejecting_is_unauthorized(self):
+        api = load_portal_api()
+        a, a_url = self.stub(401)
+        b, b_url = self.stub(401)
+        try:
+            api.AUTH_LOGIN_URLS = [a_url, b_url]
+            report = api.verify_frigate_password("ceo", "pw")
+        finally:
+            self.stop(a)
+            self.stop(b)
+        self.assertEqual(report["result"], "unauthorized")
+        self.assertEqual(report["rejected"], 2)
+        self.assertEqual(report["broken"], 0)
+
+    def test_nothing_reachable_is_unavailable_not_bad_password(self):
+        api = load_portal_api()
+        api.AUTH_LOGIN_URLS = ["http://127.0.0.1:1/api/login"]
+        report = api.verify_frigate_password("ceo", "pw")
+        self.assertEqual(report["result"], "unavailable")
+        self.assertEqual(report["rejected"], 0)
+        self.assertEqual(report["broken"], 1)
+
+    def test_partial_answer_is_reported(self):
+        """One instance says 401, another is down → 401 but flagged partial."""
+        api = load_portal_api()
+        a, a_url = self.stub(401)
+        try:
+            api.AUTH_LOGIN_URLS = [a_url, "http://127.0.0.1:1/api/login"]
+            report = api.verify_frigate_password("ceo", "pw")
+        finally:
+            self.stop(a)
+        self.assertEqual(report["result"], "unauthorized")
+        self.assertEqual(report["rejected"], 1)
+        self.assertEqual(report["broken"], 1)
+
+    def test_every_instance_appears_in_the_trace(self):
+        api = load_portal_api()
+        a, a_url = self.stub(401)
+        try:
+            api.AUTH_LOGIN_URLS = [a_url, "http://127.0.0.1:1/api/login"]
+            report = api.verify_frigate_password("ceo", "pw")
+        finally:
+            self.stop(a)
+        self.assertEqual(len(report["checked"]), 2)
+        self.assertTrue(any("401" in c for c in report["checked"]))
+
+
 class NginxTokenUnityTests(unittest.TestCase):
     def test_http_and_ssl_share_locations_and_gate_on_cookie(self):
         http_conf = (PORTAL / "nginx.conf").read_text(encoding="utf-8")

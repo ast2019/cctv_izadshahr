@@ -199,6 +199,14 @@
       body: JSON.stringify({ username, password }),
     });
     if (res.status === 401) {
+      // Frigate rejected the password. If some instances never answered, the
+      // account may live on one of those — say so instead of blaming the user.
+      const info = await res.json().catch(() => ({}));
+      if (info.unreachable > 0) {
+        throw new Error(
+          `رمز از نظر سرورهای پاسخ‌داده‌شده اشتباه است، ولی ${info.unreachable} سرور پاسخ نداد. اگر رمز درست است، کمی بعد دوباره تلاش کنید.`
+        );
+      }
       throw new Error("نام کاربری یا رمز عبور اشتباه است.");
     }
     if (res.status === 503) {

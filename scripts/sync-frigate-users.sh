@@ -26,6 +26,7 @@ INSTANCES=(
   "frigate-tasisat:8980"
   "frigate-entezamat:8981"
   "frigate-anbar:8982"
+  "frigate-khanedari:8983"
 )
 
 compose() {
