@@ -76,6 +76,14 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
   `docker compose logs <service> 2>&1 | grep -i password`
 - Reset admin: add `auth: { reset_admin_password: true }` to config, restart, read log, remove flag.
 - Sync users across instances: `scripts/sync-frigate-users.sh` (requires running containers).
+- **Frigate's REST API refuses short passwords** (min 12 chars, newer builds also
+  want a special character) and the minimum cannot be configured. So a historic
+  short password can never be re-applied through `/api/users/...`. Logging in has
+  no such rule — only the stored hash is checked. To restore known-good
+  credentials on every instance use `scripts/restore-frigate-passwords.sh <admin-pw> <ceo-pw>`:
+  it hashes with Frigate's own `hash_password()` inside each container and writes
+  `/config/frigate.db` directly, then verifies real logins on port 8971.
+  No restart needed — Frigate reads the user table on every login.
 - **Login fails / "wrong username or password"**: run `scripts/diag-portal-login.sh <user> <pass>`
   on the server. It shows the users in each `frigate.db`, the `/api/login` status
   per instance from the host **and** from inside `portal-metrics` (the path login
