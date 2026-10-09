@@ -227,6 +227,57 @@ sudo docker compose logs -f frigate-watchdog
 
 </div>
 
+## اعلام قطعی دوربین به سامانه IT
+
+سرویس `camera-ticket-notifier` هر دقیقه `camera_fps` نمونه‌های Frigate را چک
+می‌کند. اگر دوربینی چند بار پشت‌سرهم قطع بماند، یک تسک یک‌طرفه به API سامانه
+IT می‌زند (`POST /api/v1/tasks`). مسئول پیش‌فرض **فرجی**؛ همکاران در توضیحات
+(و در صورت پشتیبانی API) **بهرامی** و **صحراگرد**.
+
+### رفتار مهم
+
+- `external_id` ثابت: `camera-{site}-{name}-offline` — اسپم تسک تکراری نمی‌سازد
+- نمونهٔ `temp` هرگز تیکت نمی‌گیرد
+- اولین روشن شدن هر نمونه: دوربین‌های ازقبل‌قطع فقط ثبت می‌شوند، تسک نمی‌سازند
+  (مگر `IT_TASKS_BOOTSTRAP_TICKET=1`)
+- بازیابی دوربین تسک IT را نمی‌بندد
+
+### پارامترها (به زبان ساده)
+
+| متغیر | پیش‌فرض | معنی |
+|-------|---------|------|
+| `IT_TASKS_ENABLED` | `0` | روشن/خاموش اعلام واقعی به IT |
+| `IT_TASKS_DRY_RUN` | `0` | `1` = فقط لاگ؛ به IT نمی‌زند |
+| `IT_TASKS_API_KEY` | خالی | کلید Bearer از ادمین IT |
+| `IT_TASKS_CYCLE_SEC` | `60` | هر چند ثانیه یک‌بار چک کند |
+| `IT_TASKS_FAIL_THRESHOLD` | `3` | چند بار پشت‌سرهم قطع ببیند بعد تسک (~۳ دقیقه) |
+| `IT_TASKS_BOOTSTRAP_TICKET` | `0` | روز اول برای قطع‌های قبلی هم تسک بسازد؟ معمولاً نه |
+| `IT_TASKS_ASSIGNEE` | `faraji` | یوزرنیم مسئول در IT |
+| `IT_TASKS_COLLABORATORS` | `bahrami,sahragard` | یوزرنیم همکاران |
+| `IT_TASKS_ALLOWLIST` | خالی | اگر پر باشد فقط همان‌ها (`site:camera,...`) |
+
+کلید را در `.env` سرور بگذار (نمونه در [`.env.example`](.env.example)). در گیت commit نکن.
+
+### تست امن
+
+<div dir="ltr">
+
+```bash
+# فقط لاگ — بدون تسک واقعی
+IT_TASKS_ENABLED=1 IT_TASKS_DRY_RUN=1 IT_TASKS_API_KEY=sk_xxx \
+  sudo docker compose up -d camera-ticket-notifier
+sudo docker compose logs -f camera-ticket-notifier
+
+# یا فقط یک دوربین
+IT_TASKS_ENABLED=1 IT_TASKS_DRY_RUN=0 IT_TASKS_API_KEY=sk_xxx \
+  IT_TASKS_ALLOWLIST=center11:cam_5 \
+  sudo docker compose up -d camera-ticket-notifier
+```
+
+</div>
+
+وضعیت محلی: `data/camera-tickets/state.json`
+
 ## نکته‌ها
 
 - فقط از پورت UI امن (`8972`/`8973`/`8974`) استفاده کن، نه `5000`.

@@ -1,0 +1,531 @@
+#!/usr/bin/env python3
+"""Notify the IT task board when a Frigate camera stays offline.
+
+One-way: POST /api/v1/tasks only. Does not close tasks or poll IT status.
+
+Safety:
+  * disabled unless IT_TASKS_ENABLED=1 and API key is set
+  * dry-run logs the payload without calling IT
+  * consecutive fps=0 samples before ticketing (debounce)
+  * startup grace per Frigate instance
+  * bootstrap: first successful scan records already-offline cams without
+    creating tickets (unless IT_TASKS_BOOTSTRAP_TICKET=1)
+  * stable external_id so IT can dedupe; local ticketed flag avoids spam
+  * temp / review instances are never ticketed
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+import json
+import os
+import sys
+import time
+import traceback
+
+INSTANCES = [
+    {"id": "cafe", "base": "http://frigate-cafe:5000"},
+    {"id": "center11", "base": "http://frigate-center11:5000"},
+    {"id": "center22", "base": "http://frigate-center22:5000"},
+    {"id": "restaurant", "base": "http://frigate-restaurant:5000"},
+    {"id": "sahel", "base": "http://frigate-sahel:5000"},
+    {"id": "villa", "base": "http://frigate-villa:5000"},
+    {"id": "mahoote", "base": "http://frigate-mahoote:5000"},
+    {"id": "tasisat", "base": "http://frigate-tasisat:5000"},
+    {"id": "entezamat", "base": "http://frigate-entezamat:5000"},
+    {"id": "anbar", "base": "http://frigate-anbar:5000"},
+    {"id": "khanedari", "base": "http://frigate-khanedari:5000"},
+]
+
+# Scratch / review — broken cams expected; never create IT tickets.
+SKIP_INSTANCE_IDS = frozenset({"temp"})
+
+CYCLE_SEC = int(os.environ.get("IT_TASKS_CYCLE_SEC", "60"))
+FAIL_THRESHOLD = int(os.environ.get("IT_TASKS_FAIL_THRESHOLD", "3"))
+STARTUP_GRACE_SEC = int(os.environ.get("IT_TASKS_STARTUP_GRACE_SEC", "90"))
+API_TIMEOUT = int(os.environ.get("IT_TASKS_API_TIMEOUT", "8"))
+POST_TIMEOUT = int(os.environ.get("IT_TASKS_POST_TIMEOUT", "15"))
+
+ENABLED = os.environ.get("IT_TASKS_ENABLED", "0").strip() in ("1", "true", "yes", "on")
+DRY_RUN = os.environ.get("IT_TASKS_DRY_RUN", "0").strip() in ("1", "true", "yes", "on")
+BOOTSTRAP_TICKET = os.environ.get("IT_TASKS_BOOTSTRAP_TICKET", "0").strip() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
+API_KEY = os.environ.get("IT_TASKS_API_KEY", "").strip()
+BASE_URL = os.environ.get(
+    "IT_TASKS_BASE_URL", "http://188.121.144.90:5000/api/v1"
+).rstrip("/")
+PRIORITY = os.environ.get("IT_TASKS_PRIORITY", "high").strip() or "high"
+ASSIGNEE = os.environ.get("IT_TASKS_ASSIGNEE", "faraji").strip()
+# Display names for task description (Persian).
+COLLABORATOR_LABELS = os.environ.get(
+    "IT_TASKS_COLLABORATOR_LABELS", "بهرامی، صحراگرد"
+).strip()
+# Optional IT usernames. Only added to JSON when SEND_COLLABORATOR_FIELD=1
+# (unknown fields may 400 on stricter IT builds). Labels always go in description.
+COLLABORATORS = [
+    p.strip()
+    for p in os.environ.get("IT_TASKS_COLLABORATORS", "bahrami,sahragard").split(",")
+    if p.strip()
+]
+SEND_COLLABORATOR_FIELD = os.environ.get(
+    "IT_TASKS_SEND_COLLABORATOR_FIELD", "0"
+).strip() in ("1", "true", "yes", "on")
+
+DATA_DIR = Path(os.environ.get("IT_TASKS_DATA", "/data"))
+STATE_PATH = DATA_DIR / "state.json"
+
+
+def env_csv_pairs(name: str) -> frozenset[str]:
+    """Parse site:camera,... into frozenset of 'site:camera' keys."""
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return frozenset()
+    out = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        out.add(part.lower())
+    return frozenset(out)
+
+
+ALLOWLIST = env_csv_pairs("IT_TASKS_ALLOWLIST")
+DENYLIST = env_csv_pairs("IT_TASKS_DENYLIST")
+
+
+def log(msg: str) -> None:
+    print(f"[camera-tickets] {msg}", flush=True)
+
+
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def now_iso() -> str:
+    return now_utc().isoformat()
+
+
+def local_ts(dt: datetime | None = None) -> str:
+    """Server-local wall clock for task descriptions."""
+    dt = dt or datetime.now().astimezone()
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def camera_key(site: str, camera: str) -> str:
+    return f"{site}:{camera}"
+
+
+def external_id(site: str, camera: str) -> str:
+    return f"camera-{site}-{camera}-offline"
+
+
+def can_ticket(site: str, camera: str) -> bool:
+    key = camera_key(site, camera).lower()
+    if site in SKIP_INSTANCE_IDS:
+        return False
+    if DENYLIST and key in DENYLIST:
+        return False
+    if ALLOWLIST and key not in ALLOWLIST:
+        return False
+    return True
+
+
+def posting_allowed() -> bool:
+    return ENABLED and bool(API_KEY) and not DRY_RUN
+
+
+def service_uptime_sec(stats: dict) -> float:
+    svc = stats.get("service") or {}
+    try:
+        return float(svc.get("uptime") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def parse_camera_fps(stats: dict) -> dict[str, float]:
+    """Return {camera_name: fps} for cameras present in stats."""
+    cams = stats.get("cameras") or {}
+    out: dict[str, float] = {}
+    for name, cam in cams.items():
+        if not isinstance(cam, dict):
+            continue
+        try:
+            fps = float(cam.get("camera_fps") or 0)
+        except (TypeError, ValueError):
+            fps = 0.0
+        out[str(name)] = fps
+    return out
+
+
+def load_state(path: Path = STATE_PATH) -> dict:
+    empty = {"bootstrapped_sites": [], "cameras": {}}
+    if not path.exists():
+        return empty
+    try:
+        data = json.loads(path.read_text(encoding="utf-8") or "{}")
+    except (OSError, json.JSONDecodeError):
+        return empty
+    if not isinstance(data, dict):
+        return empty
+    cams = data.get("cameras")
+    if not isinstance(cams, dict):
+        cams = {}
+    sites = data.get("bootstrapped_sites")
+    if not isinstance(sites, list):
+        # Migrate legacy boolean flag.
+        sites = list({k.split(":")[0] for k in cams}) if data.get("bootstrapped") else []
+    return {
+        "bootstrapped_sites": [str(s) for s in sites],
+        "cameras": cams,
+    }
+
+
+def save_state(state: dict, path: Path = STATE_PATH) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def default_cam_state() -> dict:
+    return {
+        "status": "unknown",
+        "fail_streak": 0,
+        "ticketed": False,
+        "offline_since": None,
+        "last_task_id": None,
+        "last_error": None,
+        "last_seen_ok": None,
+    }
+
+
+def build_task_payload(
+    *,
+    site: str,
+    camera: str,
+    fps: float,
+    offline_since_local: str,
+    assignee: str = ASSIGNEE,
+    collaborator_labels: str = COLLABORATOR_LABELS,
+    collaborators: list[str] | None = None,
+    send_collaborator_field: bool | None = None,
+    priority: str = PRIORITY,
+) -> dict[str, Any]:
+    collaborators = collaborators if collaborators is not None else list(COLLABORATORS)
+    if send_collaborator_field is None:
+        send_collaborator_field = SEND_COLLABORATOR_FIELD
+    ext = external_id(site, camera)
+    description = (
+        f"نمونه Frigate: {site}\n"
+        f"نام دوربین: {camera}\n"
+        f"تقریباً از: {offline_since_local}\n"
+        f"همکاران: {collaborator_labels}\n"
+        f"site={site}\n"
+        f"camera={camera}\n"
+        f"fps={fps}"
+    )
+    body: dict[str, Any] = {
+        "title": f"قطع دوربین {camera} — نمونه Frigate: {site}",
+        "description": description,
+        "priority": priority,
+        "source": "cameras",
+        "external_id": ext,
+    }
+    if assignee:
+        body["assignee_username"] = assignee
+    if send_collaborator_field and collaborators:
+        body["collaborator_usernames"] = collaborators
+    return body
+
+
+def decide_action(
+    *,
+    cam_state: dict,
+    is_online: bool,
+    fail_threshold: int,
+    bootstrapped: bool,
+    bootstrap_ticket: bool,
+    eligible: bool,
+) -> tuple[str, dict]:
+    """Pure decision for one camera sample.
+
+    Returns (action, updated_cam_state) where action is one of:
+      none | mark_ok | streak | ticket | bootstrap_silent | bootstrap_ticket
+    """
+    st = dict(cam_state) if cam_state else default_cam_state()
+
+    if is_online:
+        st["status"] = "ok"
+        st["fail_streak"] = 0
+        st["ticketed"] = False
+        st["offline_since"] = None
+        st["last_error"] = None
+        st["last_seen_ok"] = now_iso()
+        return "mark_ok", st
+
+    # Offline sample
+    st["fail_streak"] = int(st.get("fail_streak") or 0) + 1
+    if not st.get("offline_since"):
+        st["offline_since"] = now_iso()
+    st["status"] = "broken"
+
+    if not eligible:
+        return "none", st
+
+    # First successful scan: snapshot current outages. Default is silent
+    # (ticketed=true, no IT POST) so deploy does not flood the board.
+    if not bootstrapped:
+        if bootstrap_ticket:
+            if st["fail_streak"] >= fail_threshold and not st.get("ticketed"):
+                return "bootstrap_ticket", st
+            return "streak", st
+        st["ticketed"] = True
+        return "bootstrap_silent", st
+
+    if st.get("ticketed"):
+        return "none", st
+
+    if st["fail_streak"] >= fail_threshold:
+        return "ticket", st
+
+    return "streak", st
+
+
+def http_get_json(url: str, timeout: int) -> dict:
+    req = Request(url, headers={"User-Agent": "camera-ticket-notifier"})
+    with urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8") or "{}")
+
+
+def post_task(
+    body: dict,
+    *,
+    base_url: str = BASE_URL,
+    api_key: str = API_KEY,
+    timeout: int = POST_TIMEOUT,
+) -> tuple[int, dict]:
+    url = f"{base_url}/tasks"
+    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "Idempotency-Key": str(body.get("external_id") or ""),
+        "User-Agent": "camera-ticket-notifier",
+    }
+    req = Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8") or "{}"
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                payload = {"raw": raw}
+            return resp.status, payload if isinstance(payload, dict) else {"raw": payload}
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+        try:
+            payload = json.loads(raw) if raw else {"error": str(exc)}
+        except json.JSONDecodeError:
+            payload = {"error": str(exc), "raw": raw}
+        return exc.code, payload if isinstance(payload, dict) else {"error": str(exc)}
+
+
+def emit_ticket(
+    body: dict,
+    *,
+    dry_run: bool = DRY_RUN,
+    enabled: bool = ENABLED,
+    api_key: str = API_KEY,
+    post_fn: Callable[..., tuple[int, dict]] | None = None,
+) -> tuple[str, dict]:
+    """Create (or dry-run) an IT task. Returns (result, response_or_meta)."""
+    if dry_run or not enabled or not api_key:
+        mode = "dry_run" if dry_run else ("disabled" if not enabled else "no_api_key")
+        log(f"{mode}: would POST {body.get('external_id')} title={body.get('title')!r}")
+        return mode, {"ok": True, "skipped": mode, "body": body}
+
+    fn = post_fn or post_task
+    status, payload = fn(body)
+    if status in (200, 201) and payload.get("ok", True):
+        log(
+            f"task ok http={status} id={payload.get('task_id')} "
+            f"ext={body.get('external_id')} replay={payload.get('idempotent_replay')}"
+        )
+        return "posted", payload
+    log(f"task fail http={status} ext={body.get('external_id')} body={payload}")
+    return "error", payload
+
+
+def site_bootstrapped(state: dict, site: str) -> bool:
+    sites = state.get("bootstrapped_sites") or []
+    return site in sites
+
+
+def mark_site_bootstrapped(state: dict, site: str) -> None:
+    sites = state.setdefault("bootstrapped_sites", [])
+    if site not in sites:
+        sites.append(site)
+
+
+def process_camera_sample(
+    state: dict,
+    *,
+    site: str,
+    camera: str,
+    fps: float,
+    fail_threshold: int = FAIL_THRESHOLD,
+    bootstrap_ticket: bool = BOOTSTRAP_TICKET,
+    emit_fn: Callable[..., tuple[str, dict]] | None = None,
+) -> str:
+    """Update state for one camera reading; maybe create a ticket. Returns action."""
+    cams: dict = state.setdefault("cameras", {})
+    key = camera_key(site, camera)
+    cam_state = cams.get(key) or default_cam_state()
+    is_online = fps > 0
+    eligible = can_ticket(site, camera)
+    bootstrapped = site_bootstrapped(state, site)
+
+    action, new_st = decide_action(
+        cam_state=cam_state,
+        is_online=is_online,
+        fail_threshold=fail_threshold,
+        bootstrapped=bootstrapped,
+        bootstrap_ticket=bootstrap_ticket,
+        eligible=eligible,
+    )
+
+    if action in ("ticket", "bootstrap_ticket"):
+        offline_iso = new_st.get("offline_since") or now_iso()
+        try:
+            offline_dt = datetime.fromisoformat(offline_iso.replace("Z", "+00:00"))
+            offline_local = local_ts(offline_dt.astimezone())
+        except ValueError:
+            offline_local = local_ts()
+        body = build_task_payload(
+            site=site,
+            camera=camera,
+            fps=fps,
+            offline_since_local=offline_local,
+        )
+        result, payload = (emit_fn or emit_ticket)(body)
+        if result in ("posted", "dry_run", "disabled", "no_api_key"):
+            new_st["ticketed"] = True
+            new_st["last_task_id"] = payload.get("task_id")
+            new_st["last_error"] = None
+            action = f"{action}:{result}"
+        else:
+            new_st["last_error"] = str(payload.get("error") or payload)[:300]
+            # Keep ticketed=false so a later cycle can retry.
+            action = f"{action}:error"
+
+    cams[key] = new_st
+    return action
+
+
+def probe_instance(inst: dict) -> dict:
+    site = inst["id"]
+    base = inst["base"]
+    out: dict[str, Any] = {
+        "site": site,
+        "ok": False,
+        "uptime_sec": 0.0,
+        "cameras": {},
+        "error": None,
+        "in_grace": False,
+    }
+    try:
+        stats = http_get_json(f"{base}/api/stats", API_TIMEOUT)
+    except (URLError, TimeoutError, OSError, json.JSONDecodeError, ValueError) as exc:
+        out["error"] = f"{type(exc).__name__}: {exc}"
+        return out
+
+    uptime = service_uptime_sec(stats)
+    out["ok"] = True
+    out["uptime_sec"] = uptime
+    out["cameras"] = parse_camera_fps(stats)
+    out["in_grace"] = bool(uptime and uptime < STARTUP_GRACE_SEC)
+    return out
+
+
+def run_cycle(state: dict, instances: list[dict] | None = None) -> dict:
+    """One full scan. Mutates and returns state."""
+    instances = instances if instances is not None else INSTANCES
+    summary = {"ok_instances": 0, "offline_samples": 0, "tickets": 0, "actions": []}
+
+    for inst in instances:
+        site = inst["id"]
+        if site in SKIP_INSTANCE_IDS:
+            continue
+        probe = probe_instance(inst)
+        if not probe["ok"]:
+            log(f"{site}: stats fail {probe.get('error')}")
+            continue
+        summary["ok_instances"] += 1
+        if probe["in_grace"]:
+            log(f"{site}: grace uptime={int(probe['uptime_sec'])}s — skip")
+            continue
+
+        was_bootstrapped = site_bootstrapped(state, site)
+        for camera, fps in sorted(probe["cameras"].items()):
+            if fps <= 0:
+                summary["offline_samples"] += 1
+            action = process_camera_sample(
+                state,
+                site=site,
+                camera=camera,
+                fps=fps,
+            )
+            if action and action != "none":
+                summary["actions"].append(f"{site}/{camera}:{action}")
+            if "ticket" in action and "error" not in action:
+                summary["tickets"] += 1
+
+        # First non-grace successful scan of this site = bootstrap snapshot.
+        if not was_bootstrapped:
+            mark_site_bootstrapped(state, site)
+            log(
+                f"{site}: bootstrap complete — already-offline cameras recorded"
+                + (" (tickets allowed)" if BOOTSTRAP_TICKET else " without IT tickets")
+            )
+
+    state["last_cycle"] = now_iso()
+    return state
+
+
+def main() -> int:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    log(
+        f"start enabled={ENABLED} dry_run={DRY_RUN} bootstrap_ticket={BOOTSTRAP_TICKET} "
+        f"cycle={CYCLE_SEC}s threshold={FAIL_THRESHOLD} assignee={ASSIGNEE!r} "
+        f"base={BASE_URL} key_set={bool(API_KEY)}"
+    )
+    if not ENABLED:
+        log("IT_TASKS_ENABLED=0 — will detect/log but not POST to IT")
+    elif DRY_RUN:
+        log("IT_TASKS_DRY_RUN=1 — payloads logged only")
+    elif not API_KEY:
+        log("IT_TASKS_API_KEY empty — POST disabled")
+
+    state = load_state()
+    while True:
+        try:
+            state = run_cycle(state)
+            save_state(state)
+        except Exception:
+            log("cycle error:\n" + traceback.format_exc())
+        time.sleep(CYCLE_SEC)
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(0)
