@@ -169,26 +169,26 @@ class PayloadTests(unittest.TestCase):
             assignee="faraji",
             collaborator_labels="بهرامی، صحراگرد",
             collaborators=["bahrami", "sahragard"],
-            send_collaborator_field=False,
         )
         self.assertIn("center11", body["title"])
         self.assertIn("نمونه Frigate: center11", body["description"])
         self.assertIn("تقریباً از: 2026-10-09 15:40:00", body["description"])
         self.assertIn("همکاران: بهرامی، صحراگرد", body["description"])
         self.assertEqual(body["assignee_username"], "faraji")
-        self.assertNotIn("collaborator_usernames", body)
+        self.assertEqual(body["collaborator_usernames"], ["bahrami", "sahragard"])
         self.assertEqual(body["external_id"], "camera-center11-cam_5-offline")
         self.assertEqual(body["source"], "cameras")
 
-        body2 = build_task_payload(
-            site="center11",
-            camera="cam_5",
+    def test_assignee_stripped_from_collaborators(self):
+        body = build_task_payload(
+            site="cafe",
+            camera="cam_1",
             fps=0.0,
             offline_since_local="2026-10-09 15:40:00",
-            collaborators=["bahrami", "sahragard"],
-            send_collaborator_field=True,
+            assignee="faraji",
+            collaborators=["faraji", "bahrami", "sahragard", "bahrami"],
         )
-        self.assertEqual(body2["collaborator_usernames"], ["bahrami", "sahragard"])
+        self.assertEqual(body["collaborator_usernames"], ["bahrami", "sahragard"])
 
 
 class ProcessSampleTests(unittest.TestCase):

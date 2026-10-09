@@ -63,21 +63,17 @@ BASE_URL = os.environ.get(
     "IT_TASKS_BASE_URL", "http://188.121.144.90:5000/api/v1"
 ).rstrip("/")
 PRIORITY = os.environ.get("IT_TASKS_PRIORITY", "high").strip() or "high"
+# Business default: مسئول فرجی، همکاران بهرامی و صحراگرد (IT usernames).
 ASSIGNEE = os.environ.get("IT_TASKS_ASSIGNEE", "faraji").strip()
 # Display names for task description (Persian).
 COLLABORATOR_LABELS = os.environ.get(
     "IT_TASKS_COLLABORATOR_LABELS", "بهرامی، صحراگرد"
 ).strip()
-# Optional IT usernames. Only added to JSON when SEND_COLLABORATOR_FIELD=1
-# (unknown fields may 400 on stricter IT builds). Labels always go in description.
 COLLABORATORS = [
     p.strip()
     for p in os.environ.get("IT_TASKS_COLLABORATORS", "bahrami,sahragard").split(",")
     if p.strip()
 ]
-SEND_COLLABORATOR_FIELD = os.environ.get(
-    "IT_TASKS_SEND_COLLABORATOR_FIELD", "0"
-).strip() in ("1", "true", "yes", "on")
 
 DATA_DIR = Path(os.environ.get("IT_TASKS_DATA", "/data"))
 STATE_PATH = DATA_DIR / "state.json"
@@ -207,6 +203,25 @@ def default_cam_state() -> dict:
     }
 
 
+def normalize_collaborators(
+    collaborators: list[str], assignee: str
+) -> list[str]:
+    """Drop blanks and the assignee (IT rejects duplicate assignee as collaborator)."""
+    seen: set[str] = set()
+    out: list[str] = []
+    assignee_l = assignee.strip().lower()
+    for name in collaborators:
+        n = name.strip()
+        if not n:
+            continue
+        key = n.lower()
+        if key == assignee_l or key in seen:
+            continue
+        seen.add(key)
+        out.append(n)
+    return out
+
+
 def build_task_payload(
     *,
     site: str,
@@ -216,17 +231,18 @@ def build_task_payload(
     assignee: str = ASSIGNEE,
     collaborator_labels: str = COLLABORATOR_LABELS,
     collaborators: list[str] | None = None,
-    send_collaborator_field: bool | None = None,
     priority: str = PRIORITY,
 ) -> dict[str, Any]:
-    collaborators = collaborators if collaborators is not None else list(COLLABORATORS)
-    if send_collaborator_field is None:
-        send_collaborator_field = SEND_COLLABORATOR_FIELD
+    collaborators = normalize_collaborators(
+        collaborators if collaborators is not None else list(COLLABORATORS),
+        assignee,
+    )
     ext = external_id(site, camera)
     description = (
         f"نمونه Frigate: {site}\n"
         f"نام دوربین: {camera}\n"
         f"تقریباً از: {offline_since_local}\n"
+        f"مسئول: {assignee or '(پیش‌فرض IT)'}\n"
         f"همکاران: {collaborator_labels}\n"
         f"site={site}\n"
         f"camera={camera}\n"
@@ -241,7 +257,7 @@ def build_task_payload(
     }
     if assignee:
         body["assignee_username"] = assignee
-    if send_collaborator_field and collaborators:
+    if collaborators:
         body["collaborator_usernames"] = collaborators
     return body
 
