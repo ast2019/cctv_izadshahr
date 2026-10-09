@@ -231,8 +231,10 @@ sudo docker compose logs -f frigate-watchdog
 
 سرویس `camera-ticket-notifier` هر دقیقه `camera_fps` نمونه‌های Frigate را چک
 می‌کند. اگر دوربینی چند بار پشت‌سرهم قطع بماند، یک تسک یک‌طرفه به API سامانه
-IT می‌زند (`POST /api/v1/tasks`). مسئول پیش‌فرض **فرجی**؛ همکاران در توضیحات
-(و در صورت پشتیبانی API) **بهرامی** و **صحراگرد**.
+IT می‌زند (`POST /api/v1/tasks`) با:
+
+- `assignee_username`: **فرجی** (`faraji`)
+- `collaborator_usernames`: **بهرامی**، **صحراگرد** (`bahrami`, `sahragard`)
 
 ### رفتار مهم
 
