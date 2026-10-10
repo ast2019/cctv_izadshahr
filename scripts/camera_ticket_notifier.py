@@ -8,8 +8,9 @@ Safety:
   * dry-run logs the payload without calling IT
   * consecutive fps=0 samples before ticketing (debounce)
   * startup grace per Frigate instance
-  * bootstrap: first successful scan records already-offline cams without
-    creating tickets (unless IT_TASKS_BOOTSTRAP_TICKET=1)
+  * offline must persist ~30 minutes (FAIL_THRESHOLD cycles) before ticketing
+  * optional IT_TASKS_BOOTSTRAP_SILENT=1 skips tickets on first site scan
+  * migrates old bootstrap-silent state so long-offline cams can be ticketed
   * stable external_id so IT can dedupe; local ticketed flag avoids spam
   * temp / review instances are never ticketed
 """
@@ -44,7 +45,8 @@ INSTANCES = [
 SKIP_INSTANCE_IDS = frozenset({"temp"})
 
 CYCLE_SEC = int(os.environ.get("IT_TASKS_CYCLE_SEC", "60"))
-FAIL_THRESHOLD = int(os.environ.get("IT_TASKS_FAIL_THRESHOLD", "3"))
+# Default 30 × 60s ≈ 30 minutes of sustained outage before creating an IT task.
+FAIL_THRESHOLD = int(os.environ.get("IT_TASKS_FAIL_THRESHOLD", "30"))
 STARTUP_GRACE_SEC = int(os.environ.get("IT_TASKS_STARTUP_GRACE_SEC", "90"))
 API_TIMEOUT = int(os.environ.get("IT_TASKS_API_TIMEOUT", "8"))
 # Keep short so LAN timeout fails over to public quickly.
@@ -52,7 +54,8 @@ POST_TIMEOUT = int(os.environ.get("IT_TASKS_POST_TIMEOUT", "8"))
 
 ENABLED = os.environ.get("IT_TASKS_ENABLED", "0").strip() in ("1", "true", "yes", "on")
 DRY_RUN = os.environ.get("IT_TASKS_DRY_RUN", "0").strip() in ("1", "true", "yes", "on")
-BOOTSTRAP_TICKET = os.environ.get("IT_TASKS_BOOTSTRAP_TICKET", "0").strip() in (
+# Legacy: if 1, first scan of a site marks offline cams ticketed without POSTing.
+BOOTSTRAP_SILENT = os.environ.get("IT_TASKS_BOOTSTRAP_SILENT", "0").strip() in (
     "1",
     "true",
     "yes",
@@ -223,6 +226,30 @@ def parse_camera_fps(stats: dict) -> dict[str, float]:
     return out
 
 
+def unlock_bootstrap_silent_cameras(cams: dict) -> int:
+    """Re-open cams that were marked ticketed without ever posting to IT.
+
+    Old default bootstrap_silent set ticketed=True with no last_task_id /
+    last_error, so long-offline cameras never reached the board. Reset them
+    and restart the outage timer so they can ticket after FAIL_THRESHOLD.
+    """
+    unlocked = 0
+    for _key, st in cams.items():
+        if not isinstance(st, dict):
+            continue
+        if (
+            st.get("ticketed")
+            and not st.get("last_task_id")
+            and not st.get("last_error")
+            and st.get("status") in ("broken", "offline", "unknown")
+        ):
+            st["ticketed"] = False
+            st["fail_streak"] = 0
+            st["post_fail_streak"] = 0
+            unlocked += 1
+    return unlocked
+
+
 def load_state(path: Path = STATE_PATH) -> dict:
     empty = {"bootstrapped_sites": [], "cameras": {}}
     if not path.exists():
@@ -240,6 +267,9 @@ def load_state(path: Path = STATE_PATH) -> dict:
     if not isinstance(sites, list):
         # Migrate legacy boolean flag.
         sites = list({k.split(":")[0] for k in cams}) if data.get("bootstrapped") else []
+    unlocked = unlock_bootstrap_silent_cameras(cams)
+    if unlocked:
+        log(f"migrated {unlocked} bootstrap-silent camera(s) back to watch queue")
     return {
         "bootstrapped_sites": [str(s) for s in sites],
         "cameras": cams,
@@ -331,13 +361,13 @@ def decide_action(
     is_online: bool,
     fail_threshold: int,
     bootstrapped: bool,
-    bootstrap_ticket: bool,
+    bootstrap_silent: bool,
     eligible: bool,
 ) -> tuple[str, dict]:
     """Pure decision for one camera sample.
 
     Returns (action, updated_cam_state) where action is one of:
-      none | mark_ok | streak | ticket | bootstrap_silent | bootstrap_ticket
+      none | mark_ok | streak | ticket | bootstrap_silent
     """
     st = dict(cam_state) if cam_state else default_cam_state()
 
@@ -359,13 +389,8 @@ def decide_action(
     if not eligible:
         return "none", st
 
-    # First successful scan: snapshot current outages. Default is silent
-    # (ticketed=true, no IT POST) so deploy does not flood the board.
-    if not bootstrapped:
-        if bootstrap_ticket:
-            if st["fail_streak"] >= fail_threshold and not st.get("ticketed"):
-                return "bootstrap_ticket", st
-            return "streak", st
+    # Opt-in legacy: on the very first site scan, record outages without POSTing.
+    if not bootstrapped and bootstrap_silent:
         st["ticketed"] = True
         return "bootstrap_silent", st
 
@@ -522,7 +547,7 @@ def process_camera_sample(
     camera: str,
     fps: float,
     fail_threshold: int = FAIL_THRESHOLD,
-    bootstrap_ticket: bool = BOOTSTRAP_TICKET,
+    bootstrap_silent: bool = BOOTSTRAP_SILENT,
     emit_fn: Callable[..., tuple[str, dict]] | None = None,
 ) -> str:
     """Update state for one camera reading; maybe create a ticket. Returns action."""
@@ -538,11 +563,11 @@ def process_camera_sample(
         is_online=is_online,
         fail_threshold=fail_threshold,
         bootstrapped=bootstrapped,
-        bootstrap_ticket=bootstrap_ticket,
+        bootstrap_silent=bootstrap_silent,
         eligible=eligible,
     )
 
-    if action in ("ticket", "bootstrap_ticket"):
+    if action == "ticket":
         offline_iso = new_st.get("offline_since") or now_iso()
         try:
             offline_dt = datetime.fromisoformat(offline_iso.replace("Z", "+00:00"))
@@ -636,13 +661,16 @@ def run_cycle(state: dict, instances: list[dict] | None = None) -> dict:
             if "ticket" in action and "error" not in action:
                 summary["tickets"] += 1
 
-        # First non-grace successful scan of this site = bootstrap snapshot.
+        # First non-grace successful scan of this site.
         if not was_bootstrapped:
             mark_site_bootstrapped(state, site)
-            log(
-                f"{site}: bootstrap complete — already-offline cameras recorded"
-                + (" (tickets allowed)" if BOOTSTRAP_TICKET else " without IT tickets")
-            )
+            if BOOTSTRAP_SILENT:
+                log(f"{site}: first scan done (bootstrap silent — no IT tickets)")
+            else:
+                log(
+                    f"{site}: first scan done — offline cams will ticket after "
+                    f"{FAIL_THRESHOLD * CYCLE_SEC // 60} min sustained outage"
+                )
 
     state["last_cycle"] = now_iso()
     return state
@@ -651,8 +679,9 @@ def run_cycle(state: dict, instances: list[dict] | None = None) -> dict:
 def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     log(
-        f"start enabled={ENABLED} dry_run={DRY_RUN} bootstrap_ticket={BOOTSTRAP_TICKET} "
-        f"cycle={CYCLE_SEC}s threshold={FAIL_THRESHOLD} assignee={ASSIGNEE!r} "
+        f"start enabled={ENABLED} dry_run={DRY_RUN} bootstrap_silent={BOOTSTRAP_SILENT} "
+        f"cycle={CYCLE_SEC}s threshold={FAIL_THRESHOLD} "
+        f"(~{FAIL_THRESHOLD * CYCLE_SEC // 60}min) assignee={ASSIGNEE!r} "
         f"bases={BASE_URLS} key_set={bool(API_KEY)}"
     )
     if not ENABLED:

@@ -208,8 +208,9 @@ services:
       IT_TASKS_COLLABORATOR_LABELS: "بهرامی، صحراگرد"
       IT_TASKS_PRIORITY: "high"
       IT_TASKS_CYCLE_SEC: "60"
-      IT_TASKS_FAIL_THRESHOLD: "3"
-      IT_TASKS_BOOTSTRAP_TICKET: "0"
+      # 30 cycles × 60s ≈ 30 minutes sustained outage before IT task
+      IT_TASKS_FAIL_THRESHOLD: "30"
+      IT_TASKS_BOOTSTRAP_SILENT: "0"
       IT_TASKS_ALLOWLIST: ""
       IT_TASKS_DENYLIST: ""
     volumes:
