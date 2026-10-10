@@ -155,12 +155,16 @@ sync_instance() {
     return 1
   fi
 
-  if [[ -n "$OLD_VIEWER_USER" && "$OLD_VIEWER_USER" != "$VIEWER_USER" ]] \
-    && grep -q "\"${OLD_VIEWER_USER}\"" <<<"$users_json"; then
-    if api DELETE "$port" "$token" "/api/users/${OLD_VIEWER_USER}" >/dev/null 2>&1; then
-      echo "  removed old viewer '${OLD_VIEWER_USER}'"
-    else
-      echo "  WARN: could not delete old viewer '${OLD_VIEWER_USER}' (login with new user still works)"
+  # Refresh user list after create/update, then drop the legacy viewer only if
+  # the new account already verified above.
+  if [[ -n "$OLD_VIEWER_USER" && "$OLD_VIEWER_USER" != "$VIEWER_USER" ]]; then
+    users_json="$(api GET "$port" "$token" "/api/users" || true)"
+    if grep -q "\"${OLD_VIEWER_USER}\"" <<<"$users_json"; then
+      if api DELETE "$port" "$token" "/api/users/${OLD_VIEWER_USER}" >/dev/null 2>&1; then
+        echo "  removed old viewer '${OLD_VIEWER_USER}'"
+      else
+        echo "  WARN: could not delete old viewer '${OLD_VIEWER_USER}' (new viewer login still works)"
+      fi
     fi
   fi
 

@@ -137,12 +137,8 @@ if not columns:
     raise SystemExit(3)
 
 print(f"  hasher: {source}")
-if OLD_VIEWER and OLD_VIEWER != CEO_USER:
-    deleted = con.execute("DELETE FROM user WHERE username=?", (OLD_VIEWER,)).rowcount
-    con.commit()
-    if deleted:
-        print(f"  removed old viewer {OLD_VIEWER}")
-
+# Create/update admin + new viewer FIRST. Only then remove the old viewer,
+# so a mid-script failure cannot leave the instance without a working viewer.
 for username, password, role in wanted:
     password_hash = hash_password(password)
     exists = con.execute(
@@ -187,6 +183,12 @@ for username, password, role in wanted:
     print(f"  {action:<7} {username:<6} hash-check: {'ok' if ok else 'FAILED'}")
     if not ok:
         raise SystemExit(1)
+
+if OLD_VIEWER and OLD_VIEWER != CEO_USER:
+    deleted = con.execute("DELETE FROM user WHERE username=?", (OLD_VIEWER,)).rowcount
+    con.commit()
+    if deleted:
+        print(f"  removed old viewer {OLD_VIEWER}")
 PYSRC
 
 # Reads passwords + usernames off stdin, then executes the script that follows.
