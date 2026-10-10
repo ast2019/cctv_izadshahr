@@ -198,9 +198,11 @@ services:
       # Hardcoded on purpose — this host does not use a .env for IT tasks.
       IT_TASKS_ENABLED: "1"
       IT_TASKS_DRY_RUN: "0"
-      IT_TASKS_API_KEY: "CCTVizad:ttMJ8QbMgNSOw3mQpo_IguHQP9ahPZVLLc7oY5xSXqI"
+      # Bearer secret only (NOT "CCTVizad:secret" — that form returns 401).
+      IT_TASKS_API_KEY: "ttMJ8QbMgNSOw3mQpo_IguHQP9ahPZVLLc7oY5xSXqI"
       # Primary LAN, then public failover if LAN IT is down.
       IT_TASKS_BASE_URLS: "http://192.168.0.90:5000/api/v1,http://188.121.144.90:5000/api/v1"
+      IT_TASKS_POST_TIMEOUT: "8"
       IT_TASKS_ASSIGNEE: "faraji"
       IT_TASKS_COLLABORATORS: "bahrami,sahragard"
       IT_TASKS_COLLABORATOR_LABELS: "بهرامی، صحراگرد"
