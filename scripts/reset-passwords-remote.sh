@@ -5,7 +5,8 @@ cd /home/rootuser/cctv_izadshahr
 
 OLD_ADMIN='tiw73TC67fxP5GqnEi6Mnltcg'
 NEW_ADMIN='Admin@1405!'
-CEO_PASS='Ceo@1405!'
+VIEWER_USER='ceoizadshahr'
+VIEWER_PASS='ceoizadshahr@1405'
 
 for port in 8972 8973; do
   echo "=== port $port ==="
@@ -28,17 +29,22 @@ for port in 8972 8973; do
   TOKEN=$(curl -sk -X POST "https://127.0.0.1:${port}/api/login" \
     -H 'Content-Type: application/json' \
     -d "{\"user\":\"admin\",\"password\":\"${NEW_ADMIN}\"}" -c - | awk '/frigate_token/ {print $7}')
-  curl -sk -X PUT "https://127.0.0.1:${port}/api/users/ceo/password" \
+  # Prefer sync script for create/rename; here only update if user already exists.
+  curl -sk -X PUT "https://127.0.0.1:${port}/api/users/${VIEWER_USER}/password" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H 'Content-Type: application/json' \
-    -d "{\"password\":\"${CEO_PASS}\"}" >/dev/null
-  echo "  admin + ceo passwords updated"
+    -d "{\"password\":\"${VIEWER_PASS}\"}" >/dev/null || \
+  curl -sk -X POST "https://127.0.0.1:${port}/api/users" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H 'Content-Type: application/json' \
+    -d "{\"username\":\"${VIEWER_USER}\",\"password\":\"${VIEWER_PASS}\",\"role\":\"viewer\"}" >/dev/null
+  echo "  admin + ${VIEWER_USER} passwords updated"
   curl -sk -X POST "http://127.0.0.1:8888/cafe/api/login" -H 'Content-Type: application/json' \
     -d "{\"user\":\"admin\",\"password\":\"${NEW_ADMIN}\"}" -o /dev/null -w "  portal test admin: %{http_code}\n" 2>/dev/null || true
 done
 
 echo "=== verify new passwords via portal ==="
-for user pass in "admin ${NEW_ADMIN}" "ceo ${CEO_PASS}"; do
+for user pass in "admin ${NEW_ADMIN}" "${VIEWER_USER} ${VIEWER_PASS}"; do
   set -- $user $pass
   for path in cafe center11; do
     code=$(curl -sk -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:8888/${path}/api/login" \

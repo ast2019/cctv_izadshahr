@@ -8,9 +8,11 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-CctvAdmin1405}"
-VIEWER_USER="${VIEWER_USER:-ceo}"
-VIEWER_PASSWORD="${VIEWER_PASSWORD:-Cctv1405}"
+VIEWER_USER="${VIEWER_USER:-ceoizadshahr}"
+VIEWER_PASSWORD="${VIEWER_PASSWORD:-ceoizadshahr@1405}"
 VIEWER_ROLE="${VIEWER_ROLE:-viewer}"
+# Remove the previous viewer account after the new one works (empty to skip).
+OLD_VIEWER_USER="${OLD_VIEWER_USER:-ceo}"
 READY_RETRIES="${READY_RETRIES:-30}"
 READY_DELAY="${READY_DELAY:-2}"
 
@@ -151,6 +153,19 @@ sync_instance() {
   if [[ -z "$(login_token "$port" "$VIEWER_USER" "$VIEWER_PASSWORD" || true)" ]]; then
     echo "  ERROR: final viewer login verification failed"
     return 1
+  fi
+
+  # Refresh user list after create/update, then drop the legacy viewer only if
+  # the new account already verified above.
+  if [[ -n "$OLD_VIEWER_USER" && "$OLD_VIEWER_USER" != "$VIEWER_USER" ]]; then
+    users_json="$(api GET "$port" "$token" "/api/users" || true)"
+    if grep -q "\"${OLD_VIEWER_USER}\"" <<<"$users_json"; then
+      if api DELETE "$port" "$token" "/api/users/${OLD_VIEWER_USER}" >/dev/null 2>&1; then
+        echo "  removed old viewer '${OLD_VIEWER_USER}'"
+      else
+        echo "  WARN: could not delete old viewer '${OLD_VIEWER_USER}' (new viewer login still works)"
+      fi
+    fi
   fi
 
   echo "  OK: admin and viewer logins verified"

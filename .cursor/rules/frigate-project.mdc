@@ -79,7 +79,7 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
   `docker compose logs <service> 2>&1 | grep -i password`
 - Reset admin: add `auth: { reset_admin_password: true }` to config, restart, read log, remove flag.
 - Sync users across instances: `scripts/sync-frigate-users.sh` (requires running containers).
-- Standard viewer user: `ceo` / role `viewer` (password set by operator, not committed).
+- Standard viewer user: `ceoizadshahr` / role `viewer` (password: `ceoizadshahr@1405`).
 
 ## Deploy workflow
 

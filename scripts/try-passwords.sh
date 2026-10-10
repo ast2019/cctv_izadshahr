@@ -8,5 +8,4 @@ test() {
 test admin123 admin admin123
 test admin-pass admin '12345@'
 test admin-tiw admin 'tiw73TC67fxP5GqnEi6Mnltcg'
-test ceo ceo 'Ceo@1405!'
-test ceo-no-bang ceo 'Ceo@1405'
+test viewer ceoizadshahr 'ceoizadshahr@1405'

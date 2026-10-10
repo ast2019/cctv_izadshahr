@@ -80,7 +80,7 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
   want a special character) and the minimum cannot be configured. So a historic
   short password can never be re-applied through `/api/users/...`. Logging in has
   no such rule — only the stored hash is checked. To restore known-good
-  credentials on every instance use `scripts/restore-frigate-passwords.sh <admin-pw> <ceo-pw>`:
+  credentials on every instance use `scripts/restore-frigate-passwords.sh <admin-pw> <viewer-pw>`:
   it hashes with Frigate's own `hash_password()` inside each container and writes
   `/config/frigate.db` directly, then verifies real logins on port 8971.
   No restart needed — Frigate reads the user table on every login.
@@ -89,11 +89,11 @@ Always use authenticated UI port mapping (`897x` → internal `8971`). Never exp
   per instance from the host **and** from inside `portal-metrics` (the path login
   really uses), and the portal endpoint's answer. Every attempt is also traced in
   `docker compose logs portal-metrics | grep '\[login\]'`, e.g.
-  `[login] user=ceo result=unauthorized cafe=401 sahel=timeout ...`.
+  `[login] user=ceoizadshahr result=unauthorized cafe=401 sahel=timeout ...`.
 - A 401 from the portal means *some* instance rejected the password and none
   accepted. If instances were unreachable the answer is only partial — the
   response carries `unreachable` and the UI says so instead of blaming the user.
-- Standard viewer user: `ceo` / role `viewer` (password set by operator, not committed).
+- Standard viewer user: `ceoizadshahr` / role `viewer` (password: `ceoizadshahr@1405`).
 
 ## Deploy workflow
 

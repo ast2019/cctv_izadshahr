@@ -1,6 +1,6 @@
 #!/bin/bash
 # Find which browser header causes 401 on login
-BODY='{"user":"ceo","password":"Cctv1405"}'
+BODY='{"user":"ceoizadshahr","password":"ceoizadshahr@1405"}'
 URL='http://127.0.0.1:8888/cafe/api/login'
 
 t() {

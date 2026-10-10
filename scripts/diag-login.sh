@@ -1,10 +1,10 @@
 #!/bin/bash
 NEW_ADMIN='Admin@1405!'
-CEO_PASS='Ceo@1405!'
+CEO_PASS='ceoizadshahr@1405'
 
 echo "=== direct frigate ==="
 for port in 8972 8973; do
-  for user in admin ceo; do
+  for user in admin ceoizadshahr; do
     if [ "$user" = admin ]; then pass="$NEW_ADMIN"; else pass="$CEO_PASS"; fi
     code=$(curl -sk -o /tmp/o.txt -w '%{http_code}' -X POST "https://127.0.0.1:${port}/api/login" \
       -H 'Content-Type: application/json' -d "{\"user\":\"${user}\",\"password\":\"${pass}\"}")
@@ -14,7 +14,7 @@ done
 
 echo "=== portal ==="
 for path in cafe center11; do
-  for user in admin ceo; do
+  for user in admin ceoizadshahr; do
     if [ "$user" = admin ]; then pass="$NEW_ADMIN"; else pass="$CEO_PASS"; fi
     code=$(curl -sk -o /tmp/o.txt -w '%{http_code}' -X POST "http://127.0.0.1:8888/${path}/api/login" \
       -H 'Content-Type: application/json' -d "{\"user\":\"${user}\",\"password\":\"${pass}\"}")

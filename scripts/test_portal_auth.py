@@ -44,8 +44,8 @@ class SessionStoreTests(unittest.TestCase):
         try:
             api = load_portal_api()
             api.init_db()
-            token = api.create_portal_session("ceo")
-            self.assertEqual(api.lookup_portal_session(token), "ceo")
+            token = api.create_portal_session("ceoizadshahr")
+            self.assertEqual(api.lookup_portal_session(token), "ceoizadshahr")
             self.assertIsNone(api.lookup_portal_session("not-a-token"))
             api.delete_portal_session(token)
             self.assertIsNone(api.lookup_portal_session(token))
@@ -117,7 +117,7 @@ class PasswordCheckTests(unittest.TestCase):
         good, good_url = self.stub(200)
         try:
             api.AUTH_LOGIN_URLS = [bad_url, good_url]
-            report = api.verify_frigate_password("ceo", "pw")
+            report = api.verify_frigate_password("ceoizadshahr", "pw")
         finally:
             self.stop(bad)
             self.stop(good)
@@ -130,7 +130,7 @@ class PasswordCheckTests(unittest.TestCase):
         b, b_url = self.stub(401)
         try:
             api.AUTH_LOGIN_URLS = [a_url, b_url]
-            report = api.verify_frigate_password("ceo", "pw")
+            report = api.verify_frigate_password("ceoizadshahr", "pw")
         finally:
             self.stop(a)
             self.stop(b)
@@ -141,7 +141,7 @@ class PasswordCheckTests(unittest.TestCase):
     def test_nothing_reachable_is_unavailable_not_bad_password(self):
         api = load_portal_api()
         api.AUTH_LOGIN_URLS = ["http://127.0.0.1:1/api/login"]
-        report = api.verify_frigate_password("ceo", "pw")
+        report = api.verify_frigate_password("ceoizadshahr", "pw")
         self.assertEqual(report["result"], "unavailable")
         self.assertEqual(report["rejected"], 0)
         self.assertEqual(report["broken"], 1)
@@ -152,7 +152,7 @@ class PasswordCheckTests(unittest.TestCase):
         a, a_url = self.stub(401)
         try:
             api.AUTH_LOGIN_URLS = [a_url, "http://127.0.0.1:1/api/login"]
-            report = api.verify_frigate_password("ceo", "pw")
+            report = api.verify_frigate_password("ceoizadshahr", "pw")
         finally:
             self.stop(a)
         self.assertEqual(report["result"], "unauthorized")
@@ -164,7 +164,7 @@ class PasswordCheckTests(unittest.TestCase):
         a, a_url = self.stub(401)
         try:
             api.AUTH_LOGIN_URLS = [a_url, "http://127.0.0.1:1/api/login"]
-            report = api.verify_frigate_password("ceo", "pw")
+            report = api.verify_frigate_password("ceoizadshahr", "pw")
         finally:
             self.stop(a)
         self.assertEqual(len(report["checked"]), 2)
