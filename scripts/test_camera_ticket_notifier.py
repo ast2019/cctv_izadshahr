@@ -192,14 +192,24 @@ class PayloadTests(unittest.TestCase):
             collaborator_labels="بهرامی، صحراگرد",
             collaborators=["bahrami", "sahragard"],
         )
-        self.assertIn("center11", body["title"])
-        self.assertIn("نمونه Frigate: center11", body["description"])
+        self.assertEqual(body["title"], "قطع دوربین cam_5 — center11")
+        self.assertIn("بخش: پذیرش و ورودی مجتمع", body["description"])
         self.assertIn("تقریباً از: 2026-10-09 15:40:00", body["description"])
         self.assertIn("همکاران: بهرامی، صحراگرد", body["description"])
         self.assertEqual(body["assignee_username"], "faraji")
         self.assertEqual(body["collaborator_usernames"], ["bahrami", "sahragard"])
         self.assertEqual(body["external_id"], "camera-center11-cam_5-offline")
         self.assertEqual(body["source"], "cameras")
+
+    def test_mahoote_section_is_persian(self):
+        body = build_task_payload(
+            site="mahoote",
+            camera="cam_63",
+            fps=0.0,
+            offline_since_local="2026-10-10 08:23:35",
+        )
+        self.assertEqual(body["title"], "قطع دوربین cam_63 — mahoote")
+        self.assertIn("بخش: محوطه", body["description"])
 
     def test_assignee_stripped_from_collaborators(self):
         body = build_task_payload(

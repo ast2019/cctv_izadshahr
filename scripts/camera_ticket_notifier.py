@@ -44,6 +44,22 @@ INSTANCES = [
 # Scratch / review — broken cams expected; never create IT tickets.
 SKIP_INSTANCE_IDS = frozenset({"temp"})
 
+# Persian section names (keep in sync with portal/js/sites.js titles).
+SITE_TITLES = {
+    "cafe": "کافه",
+    "center11": "پذیرش و ورودی مجتمع",
+    "restaurant": "رستوران",
+    "sahel": "ساحل",
+    "villa": "ویلاها",
+    "mahoote": "محوطه",
+    "center22": "پارکینگ",
+    "tasisat": "تاسیسات",
+    "entezamat": "انتظامات",
+    "anbar": "انبار",
+    "khanedari": "خانه‌داری",
+    "temp": "موقت — بررسی دوربین‌ها",
+}
+
 CYCLE_SEC = int(os.environ.get("IT_TASKS_CYCLE_SEC", "60"))
 # Default 30 × 60s ≈ 30 minutes of sustained outage before creating an IT task.
 FAIL_THRESHOLD = int(os.environ.get("IT_TASKS_FAIL_THRESHOLD", "30"))
@@ -315,6 +331,10 @@ def normalize_collaborators(
     return out
 
 
+def site_title_fa(site: str) -> str:
+    return SITE_TITLES.get(site, site)
+
+
 def build_task_payload(
     *,
     site: str,
@@ -331,8 +351,9 @@ def build_task_payload(
         assignee,
     )
     ext = external_id(site, camera)
+    section = site_title_fa(site)
     description = (
-        f"نمونه Frigate: {site}\n"
+        f"بخش: {section}\n"
         f"نام دوربین: {camera}\n"
         f"تقریباً از: {offline_since_local}\n"
         f"مسئول: {assignee or '(پیش‌فرض IT)'}\n"
@@ -342,7 +363,7 @@ def build_task_payload(
         f"fps={fps}"
     )
     body: dict[str, Any] = {
-        "title": f"قطع دوربین {camera} — نمونه Frigate: {site}",
+        "title": f"قطع دوربین {camera} — {site}",
         "description": description,
         "priority": priority,
         "source": "cameras",
