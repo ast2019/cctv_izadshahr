@@ -8,12 +8,12 @@ test_login() {
 }
 
 test_login 'direct-cafe-admin' 'https://127.0.0.1:8972/api/login' admin 'tiw73TC67fxP5GqnEi6Mnltcg'
-test_login 'direct-cafe-ceo' 'https://127.0.0.1:8972/api/login' ceo 'Ceo@1405!'
+test_login 'direct-cafe-viewer' 'https://127.0.0.1:8972/api/login' ceoizadshahr 'ceoizadshahr@1405'
 test_login 'direct-c11-admin' 'https://127.0.0.1:8973/api/login' admin 'tiw73TC67fxP5GqnEi6Mnltcg'
-test_login 'direct-c11-ceo' 'https://127.0.0.1:8973/api/login' ceo 'Ceo@1405!'
+test_login 'direct-c11-viewer' 'https://127.0.0.1:8973/api/login' ceoizadshahr 'ceoizadshahr@1405'
 test_login 'portal-cafe-admin' 'http://127.0.0.1:8888/cafe/api/login' admin 'tiw73TC67fxP5GqnEi6Mnltcg'
 test_login 'portal-wrong' 'http://127.0.0.1:8888/cafe/api/login' admin 'wrongpass'
-test_login 'portal-ceo' 'http://127.0.0.1:8888/cafe/api/login' ceo 'Ceo@1405!'
+test_login 'portal-viewer' 'http://127.0.0.1:8888/cafe/api/login' ceoizadshahr 'ceoizadshahr@1405'
 
 echo '=== temp passwords in logs ==='
 cd /home/rootuser/cctv_izadshahr

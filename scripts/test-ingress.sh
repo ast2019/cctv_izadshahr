@@ -1,6 +1,6 @@
 #!/bin/bash
 TOKEN=$(curl -sk -X POST 'https://127.0.0.1:8972/api/login' -H 'Content-Type: application/json' \
-  -d '{"user":"ceo","password":"Cctv1405"}' -c - | awk '/frigate_token/ {print $7}')
+  -d '{"user":"ceoizadshahr","password":"ceoizadshahr@1405"}' -c - | awk '/frigate_token/ {print $7}')
 echo "token len: ${#TOKEN}"
 
 echo '--- with X-Ingress-Path ---'

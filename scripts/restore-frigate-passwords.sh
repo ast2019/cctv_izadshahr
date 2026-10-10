@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Restore the known Frigate UI passwords on EVERY instance, in one pass.
 #
-#   scripts/restore-frigate-passwords.sh <admin-password> <ceo-password>
+#   scripts/restore-frigate-passwords.sh <admin-password> <viewer-password>
 #
 # Why not scripts/sync-frigate-users.sh? That one goes through Frigate's REST
 # API, which enforces password rules (min 12 chars, and newer builds also demand
@@ -23,14 +23,15 @@ cd "$(dirname "$0")/.."
 
 ADMIN_PASSWORD="${1:-${ADMIN_PASSWORD:-}}"
 CEO_PASSWORD="${2:-${CEO_PASSWORD:-}}"
-CEO_USER="${CEO_USER:-ceo}"
+CEO_USER="${CEO_USER:-ceoizadshahr}"
+OLD_VIEWER_USER="${OLD_VIEWER_USER:-ceo}"
 
 if [[ -z "$ADMIN_PASSWORD" || -z "$CEO_PASSWORD" ]]; then
   cat >&2 <<'USAGE'
-usage: scripts/restore-frigate-passwords.sh <admin-password> <ceo-password>
+usage: scripts/restore-frigate-passwords.sh <admin-password> <viewer-password>
 
-Sets user 'admin' (role admin) and user 'ceo' (role viewer) on every running
-Frigate instance, then verifies both logins against the authenticated port.
+Sets user 'admin' (role admin) and viewer user (default: ceoizadshahr) on every
+running Frigate instance, then verifies both logins against the authenticated port.
 USAGE
   exit 2
 fi
@@ -120,6 +121,7 @@ def check(password, stored):
 
 
 wanted = [("admin", ADMIN_PW, "admin"), (CEO_USER, CEO_PW, "viewer")]
+# OLD_VIEWER is injected by the shell bootstrap (4th stdin line).
 
 try:
     con = sqlite3.connect(DB, timeout=25)
@@ -135,6 +137,12 @@ if not columns:
     raise SystemExit(3)
 
 print(f"  hasher: {source}")
+if OLD_VIEWER and OLD_VIEWER != CEO_USER:
+    deleted = con.execute("DELETE FROM user WHERE username=?", (OLD_VIEWER,)).rowcount
+    con.commit()
+    if deleted:
+        print(f"  removed old viewer {OLD_VIEWER}")
+
 for username, password, role in wanted:
     password_hash = hash_password(password)
     exists = con.execute(
@@ -181,11 +189,12 @@ for username, password, role in wanted:
         raise SystemExit(1)
 PYSRC
 
-# Reads the two passwords off stdin, then executes the script that follows.
+# Reads passwords + usernames off stdin, then executes the script that follows.
 BOOTSTRAP='import sys
 ADMIN_PW = sys.stdin.readline().rstrip("\n")
 CEO_PW = sys.stdin.readline().rstrip("\n")
 CEO_USER = sys.stdin.readline().rstrip("\n")
+OLD_VIEWER = sys.stdin.readline().rstrip("\n")
 src = sys.stdin.read()
 exec(compile(src, "restore-passwords", "exec"), globals())'
 
@@ -214,7 +223,7 @@ for instance in "${INSTANCES[@]}"; do
   fi
 
   {
-    printf '%s\n%s\n%s\n' "$ADMIN_PASSWORD" "$CEO_PASSWORD" "$CEO_USER"
+    printf '%s\n%s\n%s\n%s\n' "$ADMIN_PASSWORD" "$CEO_PASSWORD" "$CEO_USER" "$OLD_VIEWER_USER"
     cat "$PY_SRC"
   } | compose exec -T "$service" python3 -c "$BOOTSTRAP"
   # PIPESTATUS[1] = the container's exit code (pipefail could mask it with SIGPIPE)

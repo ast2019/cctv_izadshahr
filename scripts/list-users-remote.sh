@@ -3,7 +3,7 @@ set -euo pipefail
 cd /home/rootuser/cctv_izadshahr
 
 ADMIN_PASS='tiw73TC67fxP5GqnEi6Mnltcg'
-CEO_PASS='Ceo@1405!'
+CEO_PASS='ceoizadshahr@1405'
 
 for port in 8972 8973; do
   echo "=== port $port ==="

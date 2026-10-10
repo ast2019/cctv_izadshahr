@@ -84,7 +84,7 @@ cameras:
 | چیز | کجاست | توضیح |
 |-----|--------|--------|
 | رمز RTSP دوربین | `config/<instance>/config.yml` | برای اتصال به دوربین/DVR |
-| رمز لاگین پنل UI | `frigate.db` هر نمونه | کاربر `admin`، `ceo` و ... |
+| رمز لاگین پنل UI | `frigate.db` هر نمونه | کاربر `admin`، `ceoizadshahr` و ... |
 
 **رمز `.env` دیگر استفاده نمی‌شود.** فایل `.env.example` فقط برای سازگاری
 قدیمی مانده؛ `docker-compose` دیگر آن را نمی‌خواند.
@@ -115,7 +115,7 @@ auth:
 
 </div>
 
-#### یکسان‌سازی رمز admin و کاربر viewer (`ceo`)
+#### یکسان‌سازی رمز admin و کاربر viewer (`ceoizadshahr`)
 
 <div dir="ltr">
 
@@ -136,7 +136,7 @@ curl -sk -X PUT https://localhost:8972/api/users/admin/password \
 curl -sk -X POST https://localhost:8972/api/users \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"username":"ceo","password":"Ceo@1405!","role":"viewer"}'
+  -d '{"username":"ceoizadshahr","password":"ceoizadshahr@1405","role":"viewer"}'
 ```
 
 </div>

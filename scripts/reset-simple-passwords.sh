@@ -4,7 +4,8 @@ cd /home/rootuser/cctv_izadshahr
 
 OLD_ADMIN='Admin@1405!'
 NEW_ADMIN='CctvAdmin1405'
-CEO_PASS='Cctv1405'
+VIEWER_USER='ceoizadshahr'
+VIEWER_PASS='ceoizadshahr@1405'
 
 for port in 8972 8973; do
   echo "=== port $port ==="
@@ -23,14 +24,17 @@ for port in 8972 8973; do
   TOKEN=$(curl -sk -X POST "https://127.0.0.1:${port}/api/login" \
     -H 'Content-Type: application/json' \
     -d "{\"user\":\"admin\",\"password\":\"${NEW_ADMIN}\"}" -c - | awk '/frigate_token/ {print $7}')
-  curl -sk -X PUT "https://127.0.0.1:${port}/api/users/ceo/password" \
+  curl -sk -X PUT "https://127.0.0.1:${port}/api/users/${VIEWER_USER}/password" \
     -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' \
-    -d "{\"password\":\"${CEO_PASS}\"}" >/dev/null
+    -d "{\"password\":\"${VIEWER_PASS}\"}" >/dev/null || \
+  curl -sk -X POST "https://127.0.0.1:${port}/api/users" \
+    -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' \
+    -d "{\"username\":\"${VIEWER_USER}\",\"password\":\"${VIEWER_PASS}\",\"role\":\"viewer\"}" >/dev/null
   echo "  passwords updated"
 done
 
-for user in admin ceo; do
-  if [ "$user" = admin ]; then pass="$NEW_ADMIN"; else pass="$CEO_PASS"; fi
+for user in admin "$VIEWER_USER"; do
+  if [ "$user" = admin ]; then pass="$NEW_ADMIN"; else pass="$VIEWER_PASS"; fi
   for path in cafe center11; do
     code=$(curl -sk -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:8888/${path}/api/login" \
       -H 'Content-Type: application/json' -d "{\"user\":\"${user}\",\"password\":\"${pass}\"}")
