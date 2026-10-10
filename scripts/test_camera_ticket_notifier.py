@@ -18,10 +18,14 @@ from camera_ticket_notifier import (
     emit_ticket,
     external_id,
     load_state,
+    parse_base_urls,
     parse_camera_fps,
+    post_task,
     process_camera_sample,
     save_state,
+    should_failover_status,
 )
+from urllib.error import URLError
 
 
 class ParseAndIdsTests(unittest.TestCase):
@@ -262,6 +266,88 @@ class ProcessSampleTests(unittest.TestCase):
         self.assertTrue(action.startswith("bootstrap_silent"))
         self.assertEqual(posts, [])
         self.assertTrue(state["cameras"]["cafe:cam_x"]["ticketed"])
+
+
+class FailoverTests(unittest.TestCase):
+    def test_parse_base_urls_list(self):
+        urls = parse_base_urls(
+            "http://192.168.0.90:5000/api/v1, http://188.121.144.90:5000/api/v1",
+            "",
+        )
+        self.assertEqual(
+            urls,
+            [
+                "http://192.168.0.90:5000/api/v1",
+                "http://188.121.144.90:5000/api/v1",
+            ],
+        )
+
+    def test_defaults_lan_then_public(self):
+        urls = parse_base_urls("", "")
+        self.assertEqual(urls[0], "http://192.168.0.90:5000/api/v1")
+        self.assertEqual(urls[1], "http://188.121.144.90:5000/api/v1")
+
+    def test_failover_on_network_error(self):
+        calls: list[str] = []
+
+        def once(body, *, base_url, **_kw):
+            calls.append(base_url)
+            if "192.168.0.90" in base_url:
+                raise URLError("timed out")
+            return 201, {"ok": True, "task_id": 9, "_base_url": base_url}
+
+        status, payload = post_task(
+            {"external_id": "camera-x-offline", "title": "t"},
+            base_urls=[
+                "http://192.168.0.90:5000/api/v1",
+                "http://188.121.144.90:5000/api/v1",
+            ],
+            post_once_fn=once,
+        )
+        self.assertEqual(status, 201)
+        self.assertEqual(payload["task_id"], 9)
+        self.assertEqual(len(calls), 2)
+
+    def test_failover_on_503(self):
+        calls: list[str] = []
+
+        def once(body, *, base_url, **_kw):
+            calls.append(base_url)
+            if "192.168.0.90" in base_url:
+                return 503, {"ok": False, "error": "api_disabled", "_base_url": base_url}
+            return 200, {"ok": True, "task_id": 3, "idempotent_replay": True}
+
+        status, payload = post_task(
+            {"external_id": "camera-x-offline"},
+            base_urls=[
+                "http://192.168.0.90:5000/api/v1",
+                "http://188.121.144.90:5000/api/v1",
+            ],
+            post_once_fn=once,
+        )
+        self.assertEqual(status, 200)
+        self.assertTrue(payload.get("idempotent_replay"))
+        self.assertEqual(len(calls), 2)
+
+    def test_no_failover_on_401(self):
+        calls: list[str] = []
+
+        def once(body, *, base_url, **_kw):
+            calls.append(base_url)
+            return 401, {"ok": False, "error": "unauthorized"}
+
+        status, payload = post_task(
+            {"external_id": "camera-x-offline"},
+            base_urls=[
+                "http://192.168.0.90:5000/api/v1",
+                "http://188.121.144.90:5000/api/v1",
+            ],
+            post_once_fn=once,
+        )
+        self.assertEqual(status, 401)
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(should_failover_status(503))
+        self.assertFalse(should_failover_status(401))
 
 
 class EmitFlagsTests(unittest.TestCase):

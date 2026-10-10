@@ -59,9 +59,11 @@ BOOTSTRAP_TICKET = os.environ.get("IT_TASKS_BOOTSTRAP_TICKET", "0").strip() in (
 )
 
 API_KEY = os.environ.get("IT_TASKS_API_KEY", "").strip()
-BASE_URL = os.environ.get(
-    "IT_TASKS_BASE_URL", "http://188.121.144.90:5000/api/v1"
-).rstrip("/")
+# Prefer LAN IT host; fall back to public IP if unreachable / 5xx.
+DEFAULT_BASE_URLS = (
+    "http://192.168.0.90:5000/api/v1",
+    "http://188.121.144.90:5000/api/v1",
+)
 PRIORITY = os.environ.get("IT_TASKS_PRIORITY", "high").strip() or "high"
 # Business default: مسئول فرجی، همکاران بهرامی و صحراگرد (IT usernames).
 ASSIGNEE = os.environ.get("IT_TASKS_ASSIGNEE", "faraji").strip()
@@ -77,6 +79,41 @@ COLLABORATORS = [
 
 DATA_DIR = Path(os.environ.get("IT_TASKS_DATA", "/data"))
 STATE_PATH = DATA_DIR / "state.json"
+
+
+def parse_base_urls(
+    raw_list: str | None = None,
+    raw_single: str | None = None,
+) -> list[str]:
+    """Ordered IT API bases: try first, fail over to the next on outage."""
+    if raw_list is None:
+        raw_list = os.environ.get("IT_TASKS_BASE_URLS", "")
+    if raw_single is None:
+        raw_single = os.environ.get("IT_TASKS_BASE_URL", "")
+    urls: list[str] = []
+    seen: set[str] = set()
+    for part in (raw_list or "").split(","):
+        u = part.strip().rstrip("/")
+        if u and u not in seen:
+            seen.add(u)
+            urls.append(u)
+    if not urls:
+        single = (raw_single or "").strip().rstrip("/")
+        if single:
+            urls.append(single)
+    if not urls:
+        urls = [u.rstrip("/") for u in DEFAULT_BASE_URLS]
+    return urls
+
+
+BASE_URLS = parse_base_urls()
+# Kept for log compatibility / single-URL callers.
+BASE_URL = BASE_URLS[0]
+
+
+def should_failover_status(status: int) -> bool:
+    """Retry next base on gateway / service-unavailable style responses."""
+    return status in (502, 503, 504) or status >= 520
 
 
 def env_csv_pairs(name: str) -> frozenset[str]:
@@ -321,14 +358,15 @@ def http_get_json(url: str, timeout: int) -> dict:
         return json.loads(resp.read().decode("utf-8") or "{}")
 
 
-def post_task(
+def post_task_once(
     body: dict,
     *,
-    base_url: str = BASE_URL,
+    base_url: str,
     api_key: str = API_KEY,
     timeout: int = POST_TIMEOUT,
 ) -> tuple[int, dict]:
-    url = f"{base_url}/tasks"
+    """POST to a single IT base URL. Raises on network/timeout errors."""
+    url = f"{base_url.rstrip('/')}/tasks"
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -344,14 +382,67 @@ def post_task(
                 payload = json.loads(raw)
             except json.JSONDecodeError:
                 payload = {"raw": raw}
-            return resp.status, payload if isinstance(payload, dict) else {"raw": payload}
+            out = payload if isinstance(payload, dict) else {"raw": payload}
+            out.setdefault("_base_url", base_url)
+            return resp.status, out
     except HTTPError as exc:
         raw = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
         try:
             payload = json.loads(raw) if raw else {"error": str(exc)}
         except json.JSONDecodeError:
             payload = {"error": str(exc), "raw": raw}
-        return exc.code, payload if isinstance(payload, dict) else {"error": str(exc)}
+        out = payload if isinstance(payload, dict) else {"error": str(exc)}
+        out.setdefault("_base_url", base_url)
+        return exc.code, out
+
+
+def post_task(
+    body: dict,
+    *,
+    base_urls: list[str] | None = None,
+    api_key: str = API_KEY,
+    timeout: int = POST_TIMEOUT,
+    post_once_fn: Callable[..., tuple[int, dict]] | None = None,
+) -> tuple[int, dict]:
+    """POST with failover across ordered base URLs.
+
+    Tries each URL until success (200/201) or a non-retryable HTTP error
+    (e.g. 400/401). Network errors and 502/503/504 move to the next URL.
+    """
+    urls = list(base_urls) if base_urls is not None else list(BASE_URLS)
+    if not urls:
+        urls = list(DEFAULT_BASE_URLS)
+    once = post_once_fn or post_task_once
+    last_status = 0
+    last_payload: dict = {"error": "no_base_urls"}
+
+    for i, base in enumerate(urls):
+        try:
+            status, payload = once(
+                body, base_url=base, api_key=api_key, timeout=timeout
+            )
+        except (URLError, TimeoutError, OSError) as exc:
+            last_status = 0
+            last_payload = {
+                "error": f"{type(exc).__name__}: {exc}",
+                "_base_url": base,
+            }
+            if i + 1 < len(urls):
+                log(f"IT unreachable {base} ({last_payload['error']}) — failover")
+                continue
+            return last_status, last_payload
+
+        last_status, last_payload = status, payload
+        if status in (200, 201):
+            if i > 0:
+                log(f"IT failover ok via {base}")
+            return status, payload
+        if should_failover_status(status) and i + 1 < len(urls):
+            log(f"IT {base} http={status} — failover to next")
+            continue
+        return status, payload
+
+    return last_status, last_payload
 
 
 def emit_ticket(
@@ -365,15 +456,19 @@ def emit_ticket(
     """Create (or dry-run) an IT task. Returns (result, response_or_meta)."""
     if dry_run or not enabled or not api_key:
         mode = "dry_run" if dry_run else ("disabled" if not enabled else "no_api_key")
-        log(f"{mode}: would POST {body.get('external_id')} title={body.get('title')!r}")
-        return mode, {"ok": True, "skipped": mode, "body": body}
+        log(
+            f"{mode}: would POST {body.get('external_id')} "
+            f"title={body.get('title')!r} bases={BASE_URLS}"
+        )
+        return mode, {"ok": True, "skipped": mode, "body": body, "bases": list(BASE_URLS)}
 
     fn = post_fn or post_task
     status, payload = fn(body)
     if status in (200, 201) and payload.get("ok", True):
         log(
             f"task ok http={status} id={payload.get('task_id')} "
-            f"ext={body.get('external_id')} replay={payload.get('idempotent_replay')}"
+            f"ext={body.get('external_id')} via={payload.get('_base_url')} "
+            f"replay={payload.get('idempotent_replay')}"
         )
         return "posted", payload
     log(f"task fail http={status} ext={body.get('external_id')} body={payload}")
@@ -521,7 +616,7 @@ def main() -> int:
     log(
         f"start enabled={ENABLED} dry_run={DRY_RUN} bootstrap_ticket={BOOTSTRAP_TICKET} "
         f"cycle={CYCLE_SEC}s threshold={FAIL_THRESHOLD} assignee={ASSIGNEE!r} "
-        f"base={BASE_URL} key_set={bool(API_KEY)}"
+        f"bases={BASE_URLS} key_set={bool(API_KEY)}"
     )
     if not ENABLED:
         log("IT_TASKS_ENABLED=0 — will detect/log but not POST to IT")
