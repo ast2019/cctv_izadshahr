@@ -26,6 +26,7 @@ from camera_ticket_notifier import (
     run_cycle,
     save_state,
     should_failover_status,
+    unlock_bootstrap_silent_cameras,
 )
 from urllib.error import URLError
 import camera_ticket_notifier as mod
@@ -87,7 +88,7 @@ class DecideActionTests(unittest.TestCase):
             is_online=True,
             fail_threshold=3,
             bootstrapped=True,
-            bootstrap_ticket=False,
+            bootstrap_silent=False,
             eligible=True,
         )
         self.assertEqual(action, "mark_ok")
@@ -103,7 +104,7 @@ class DecideActionTests(unittest.TestCase):
                 is_online=False,
                 fail_threshold=3,
                 bootstrapped=True,
-                bootstrap_ticket=False,
+                bootstrap_silent=False,
                 eligible=True,
             )
             self.assertEqual(action, "streak")
@@ -113,10 +114,33 @@ class DecideActionTests(unittest.TestCase):
             is_online=False,
             fail_threshold=3,
             bootstrapped=True,
-            bootstrap_ticket=False,
+            bootstrap_silent=False,
             eligible=True,
         )
         self.assertEqual(action, "ticket")
+
+    def test_thirty_minute_threshold(self):
+        st = default_cam_state()
+        for _ in range(29):
+            action, st = decide_action(
+                cam_state=st,
+                is_online=False,
+                fail_threshold=30,
+                bootstrapped=True,
+                bootstrap_silent=False,
+                eligible=True,
+            )
+            self.assertEqual(action, "streak")
+        action, st = decide_action(
+            cam_state=st,
+            is_online=False,
+            fail_threshold=30,
+            bootstrapped=True,
+            bootstrap_silent=False,
+            eligible=True,
+        )
+        self.assertEqual(action, "ticket")
+        self.assertEqual(st["fail_streak"], 30)
 
     def test_already_ticketed_no_spam(self):
         st = default_cam_state()
@@ -126,44 +150,35 @@ class DecideActionTests(unittest.TestCase):
             is_online=False,
             fail_threshold=3,
             bootstrapped=True,
-            bootstrap_ticket=False,
+            bootstrap_silent=False,
             eligible=True,
         )
         self.assertEqual(action, "none")
 
-    def test_bootstrap_silent_immediate(self):
+    def test_first_scan_counts_toward_threshold_by_default(self):
+        action, st = decide_action(
+            cam_state=default_cam_state(),
+            is_online=False,
+            fail_threshold=30,
+            bootstrapped=False,
+            bootstrap_silent=False,
+            eligible=True,
+        )
+        self.assertEqual(action, "streak")
+        self.assertFalse(st["ticketed"])
+        self.assertEqual(st["fail_streak"], 1)
+
+    def test_bootstrap_silent_opt_in(self):
         action, st = decide_action(
             cam_state=default_cam_state(),
             is_online=False,
             fail_threshold=3,
             bootstrapped=False,
-            bootstrap_ticket=False,
+            bootstrap_silent=True,
             eligible=True,
         )
         self.assertEqual(action, "bootstrap_silent")
         self.assertTrue(st["ticketed"])
-
-    def test_bootstrap_ticket_mode_waits_threshold(self):
-        st = default_cam_state()
-        action, st = decide_action(
-            cam_state=st,
-            is_online=False,
-            fail_threshold=3,
-            bootstrapped=False,
-            bootstrap_ticket=True,
-            eligible=True,
-        )
-        self.assertEqual(action, "streak")
-        st["fail_streak"] = 2
-        action, st = decide_action(
-            cam_state=st,
-            is_online=False,
-            fail_threshold=3,
-            bootstrapped=False,
-            bootstrap_ticket=True,
-            eligible=True,
-        )
-        self.assertEqual(action, "bootstrap_ticket")
 
 
 class PayloadTests(unittest.TestCase):
@@ -249,7 +264,7 @@ class ProcessSampleTests(unittest.TestCase):
             )
         self.assertEqual(len(posts), 2)
 
-    def test_bootstrap_no_post(self):
+    def test_first_scan_no_immediate_ticket(self):
         state = {"bootstrapped_sites": [], "cameras": {}}
         posts: list[dict] = []
 
@@ -262,13 +277,46 @@ class ProcessSampleTests(unittest.TestCase):
             site="cafe",
             camera="cam_x",
             fps=0.0,
-            fail_threshold=3,
-            bootstrap_ticket=False,
+            fail_threshold=30,
+            bootstrap_silent=False,
             emit_fn=fake_emit,
         )
-        self.assertTrue(action.startswith("bootstrap_silent"))
+        self.assertEqual(action, "streak")
         self.assertEqual(posts, [])
-        self.assertTrue(state["cameras"]["cafe:cam_x"]["ticketed"])
+        self.assertFalse(state["cameras"]["cafe:cam_x"]["ticketed"])
+
+
+class MigrateStateTests(unittest.TestCase):
+    def test_unlock_bootstrap_silent_leftovers(self):
+        cams = {
+            "mahoote:cam_61": {
+                "status": "broken",
+                "ticketed": True,
+                "fail_streak": 100,
+                "last_task_id": None,
+                "last_error": None,
+            },
+            "mahoote:cam_ok_posted": {
+                "status": "broken",
+                "ticketed": True,
+                "fail_streak": 50,
+                "last_task_id": 455,
+                "last_error": None,
+            },
+            "cafe:cam_fatal": {
+                "status": "broken",
+                "ticketed": True,
+                "fail_streak": 10,
+                "last_task_id": None,
+                "last_error": "unauthorized",
+            },
+        }
+        n = unlock_bootstrap_silent_cameras(cams)
+        self.assertEqual(n, 1)
+        self.assertFalse(cams["mahoote:cam_61"]["ticketed"])
+        self.assertEqual(cams["mahoote:cam_61"]["fail_streak"], 0)
+        self.assertTrue(cams["mahoote:cam_ok_posted"]["ticketed"])
+        self.assertTrue(cams["cafe:cam_fatal"]["ticketed"])
 
 
 class ApiKeyTests(unittest.TestCase):
@@ -286,34 +334,18 @@ class ApiKeyTests(unittest.TestCase):
 
 
 class ProcessFlowTests(unittest.TestCase):
-    def test_bootstrap_then_new_outage_tickets_once(self):
-        """Full site process: first scan silent, later outage tickets once."""
-        state = {"bootstrapped_sites": [], "cameras": {}}
+    def test_sustained_outage_tickets_once(self):
+        """Offline cam reaches threshold once; no spam while still down."""
+        state = {"bootstrapped_sites": ["center11"], "cameras": {}}
         posts: list[dict] = []
 
         def emit(body, **_kw):
             posts.append(body)
             return "posted", {"ok": True, "task_id": 99, "_http_status": 201}
 
-        # Cycle 1 — bootstrap already-offline cam_a (no ticket)
-        a1 = process_camera_sample(
-            state,
-            site="center11",
-            camera="cam_a",
-            fps=0.0,
-            fail_threshold=3,
-            emit_fn=emit,
-        )
-        self.assertTrue(a1.startswith("bootstrap_silent"))
-        state["bootstrapped_sites"] = ["center11"]
-        self.assertEqual(posts, [])
-
-        # Online cam_b stays quiet
         process_camera_sample(
             state, site="center11", camera="cam_b", fps=5.0, fail_threshold=3, emit_fn=emit
         )
-
-        # cam_b drops for 3 cycles → one ticket
         for _ in range(3):
             process_camera_sample(
                 state,
@@ -328,7 +360,6 @@ class ProcessFlowTests(unittest.TestCase):
         self.assertEqual(posts[0]["assignee_username"], "faraji")
         self.assertEqual(posts[0]["collaborator_usernames"], ["bahrami", "sahragard"])
 
-        # Still offline — no spam
         process_camera_sample(
             state, site="center11", camera="cam_b", fps=0.0, fail_threshold=3, emit_fn=emit
         )
@@ -385,7 +416,8 @@ class ProcessFlowTests(unittest.TestCase):
             mod.probe_instance = old
 
         self.assertIn("villa", state["bootstrapped_sites"])
-        self.assertTrue(state["cameras"]["villa:cam_1"]["ticketed"])
+        self.assertFalse(state["cameras"]["villa:cam_1"]["ticketed"])
+        self.assertEqual(state["cameras"]["villa:cam_1"]["fail_streak"], 1)
         self.assertEqual(state["cameras"]["villa:cam_2"]["status"], "ok")
 
 
@@ -503,7 +535,14 @@ class StatePersistTests(unittest.TestCase):
             path = Path(td) / "state.json"
             state = {
                 "bootstrapped_sites": ["cafe"],
-                "cameras": {"cafe:cam_1": {"status": "broken", "ticketed": True}},
+                "cameras": {
+                    "cafe:cam_1": {
+                        "status": "broken",
+                        "ticketed": True,
+                        "last_task_id": 128,
+                        "last_error": None,
+                    }
+                },
             }
             save_state(state, path)
             loaded = load_state(path)
