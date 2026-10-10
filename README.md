@@ -248,32 +248,26 @@ IT می‌زند (`POST /api/v1/tasks`) با:
 
 | متغیر | پیش‌فرض | معنی |
 |-------|---------|------|
-| `IT_TASKS_ENABLED` | `0` | روشن/خاموش اعلام واقعی به IT |
-| `IT_TASKS_DRY_RUN` | `0` | `1` = فقط لاگ؛ به IT نمی‌زند |
-| `IT_TASKS_API_KEY` | خالی | کلید Bearer از ادمین IT |
-| `IT_TASKS_CYCLE_SEC` | `60` | هر چند ثانیه یک‌بار چک کند |
-| `IT_TASKS_FAIL_THRESHOLD` | `3` | چند بار پشت‌سرهم قطع ببیند بعد تسک (~۳ دقیقه) |
-| `IT_TASKS_BOOTSTRAP_TICKET` | `0` | روز اول برای قطع‌های قبلی هم تسک بسازد؟ معمولاً نه |
-| `IT_TASKS_ASSIGNEE` | `faraji` | یوزرنیم مسئول در IT |
-| `IT_TASKS_COLLABORATORS` | `bahrami,sahragard` | یوزرنیم همکاران |
-| `IT_TASKS_ALLOWLIST` | خالی | اگر پر باشد فقط همان‌ها (`site:camera,...`) |
+تنظیمات اتصال (کلید API، مسئول، همکاران، آدرس IT) **ثابت داخل**
+[`docker-compose.yml`](docker-compose.yml) سرویس `camera-ticket-notifier` است؛
+نیازی به فایل `.env` نیست.
 
-کلید را در `.env` سرور بگذار (نمونه در [`.env.example`](.env.example)). در گیت commit نکن.
+| پارامتر | مقدار فعلی |
+|---------|------------|
+| فعال | بله |
+| مسئول | `faraji` |
+| همکاران | `bahrami`, `sahragard` |
+| سیکل چک | ۶۰ ثانیه |
+| آستانه قطع | ۳ بار (~۳ دقیقه) |
+| bootstrap | بدون تسک برای قطع‌های ازقبل‌موجود |
 
-### تست امن
+### راه‌اندازی
 
 <div dir="ltr">
 
 ```bash
-# فقط لاگ — بدون تسک واقعی
-IT_TASKS_ENABLED=1 IT_TASKS_DRY_RUN=1 IT_TASKS_API_KEY=sk_xxx \
-  sudo docker compose up -d camera-ticket-notifier
+sudo docker compose up -d camera-ticket-notifier
 sudo docker compose logs -f camera-ticket-notifier
-
-# یا فقط یک دوربین
-IT_TASKS_ENABLED=1 IT_TASKS_DRY_RUN=0 IT_TASKS_API_KEY=sk_xxx \
-  IT_TASKS_ALLOWLIST=center11:cam_5 \
-  sudo docker compose up -d camera-ticket-notifier
 ```
 
 </div>

@@ -195,19 +195,20 @@ services:
     command: ["python3", "/app/camera_ticket_notifier.py"]
     environment:
       IT_TASKS_DATA: /data
-      IT_TASKS_ENABLED: ${IT_TASKS_ENABLED:-0}
-      IT_TASKS_DRY_RUN: ${IT_TASKS_DRY_RUN:-0}
-      IT_TASKS_API_KEY: ${IT_TASKS_API_KEY:-}
-      IT_TASKS_BASE_URL: ${IT_TASKS_BASE_URL:-http://188.121.144.90:5000/api/v1}
-      IT_TASKS_ASSIGNEE: ${IT_TASKS_ASSIGNEE:-faraji}
-      IT_TASKS_COLLABORATORS: ${IT_TASKS_COLLABORATORS:-bahrami,sahragard}
-      IT_TASKS_COLLABORATOR_LABELS: ${IT_TASKS_COLLABORATOR_LABELS:-بهرامی، صحراگرد}
-      IT_TASKS_PRIORITY: ${IT_TASKS_PRIORITY:-high}
-      IT_TASKS_CYCLE_SEC: ${IT_TASKS_CYCLE_SEC:-60}
-      IT_TASKS_FAIL_THRESHOLD: ${IT_TASKS_FAIL_THRESHOLD:-3}
-      IT_TASKS_BOOTSTRAP_TICKET: ${IT_TASKS_BOOTSTRAP_TICKET:-0}
-      IT_TASKS_ALLOWLIST: ${IT_TASKS_ALLOWLIST:-}
-      IT_TASKS_DENYLIST: ${IT_TASKS_DENYLIST:-}
+      # Hardcoded on purpose — this host does not use a .env for IT tasks.
+      IT_TASKS_ENABLED: "1"
+      IT_TASKS_DRY_RUN: "0"
+      IT_TASKS_API_KEY: "CCTVizad:ttMJ8QbMgNSOw3mQpo_IguHQP9ahPZVLLc7oY5xSXqI"
+      IT_TASKS_BASE_URL: "http://188.121.144.90:5000/api/v1"
+      IT_TASKS_ASSIGNEE: "faraji"
+      IT_TASKS_COLLABORATORS: "bahrami,sahragard"
+      IT_TASKS_COLLABORATOR_LABELS: "بهرامی، صحراگرد"
+      IT_TASKS_PRIORITY: "high"
+      IT_TASKS_CYCLE_SEC: "60"
+      IT_TASKS_FAIL_THRESHOLD: "3"
+      IT_TASKS_BOOTSTRAP_TICKET: "0"
+      IT_TASKS_ALLOWLIST: ""
+      IT_TASKS_DENYLIST: ""
     volumes:
       - ./scripts/camera_ticket_notifier.py:/app/camera_ticket_notifier.py:ro
       - ./data/camera-tickets:/data
