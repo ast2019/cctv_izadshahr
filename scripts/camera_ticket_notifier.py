@@ -47,7 +47,8 @@ CYCLE_SEC = int(os.environ.get("IT_TASKS_CYCLE_SEC", "60"))
 FAIL_THRESHOLD = int(os.environ.get("IT_TASKS_FAIL_THRESHOLD", "3"))
 STARTUP_GRACE_SEC = int(os.environ.get("IT_TASKS_STARTUP_GRACE_SEC", "90"))
 API_TIMEOUT = int(os.environ.get("IT_TASKS_API_TIMEOUT", "8"))
-POST_TIMEOUT = int(os.environ.get("IT_TASKS_POST_TIMEOUT", "15"))
+# Keep short so LAN timeout fails over to public quickly.
+POST_TIMEOUT = int(os.environ.get("IT_TASKS_POST_TIMEOUT", "8"))
 
 ENABLED = os.environ.get("IT_TASKS_ENABLED", "0").strip() in ("1", "true", "yes", "on")
 DRY_RUN = os.environ.get("IT_TASKS_DRY_RUN", "0").strip() in ("1", "true", "yes", "on")
@@ -58,13 +59,32 @@ BOOTSTRAP_TICKET = os.environ.get("IT_TASKS_BOOTSTRAP_TICKET", "0").strip() in (
     "on",
 )
 
-API_KEY = os.environ.get("IT_TASKS_API_KEY", "").strip()
 # Prefer LAN IT host; fall back to public IP if unreachable / 5xx.
 DEFAULT_BASE_URLS = (
     "http://192.168.0.90:5000/api/v1",
     "http://188.121.144.90:5000/api/v1",
 )
 PRIORITY = os.environ.get("IT_TASKS_PRIORITY", "high").strip() or "high"
+
+
+def normalize_api_key(raw: str) -> str:
+    """IT Bearer expects the raw secret, not `ClientName:secret`.
+
+    Runtime evidence: `CCTVizad:<secret>` → 401; bare `<secret>` → 201.
+    """
+    key = (raw or "").strip()
+    if not key:
+        return ""
+    if ":" in key:
+        client, _, secret = key.partition(":")
+        secret = secret.strip()
+        # Only strip when it looks like ClientName:secret (not a sk_… token).
+        if client.strip() and secret and not client.strip().lower().startswith("sk_"):
+            return secret
+    return key
+
+
+API_KEY = normalize_api_key(os.environ.get("IT_TASKS_API_KEY", ""))
 # Business default: مسئول فرجی، همکاران بهرامی و صحراگرد (IT usernames).
 ASSIGNEE = os.environ.get("IT_TASKS_ASSIGNEE", "faraji").strip()
 # Display names for task description (Persian).
@@ -114,6 +134,11 @@ BASE_URL = BASE_URLS[0]
 def should_failover_status(status: int) -> bool:
     """Retry next base on gateway / service-unavailable style responses."""
     return status in (502, 503, 504) or status >= 520
+
+
+def is_permanent_client_error(status: int) -> bool:
+    """Auth/validation errors will not succeed on retry with the same payload."""
+    return status in (400, 401, 403)
 
 
 def env_csv_pairs(name: str) -> frozenset[str]:
@@ -237,6 +262,7 @@ def default_cam_state() -> dict:
         "last_task_id": None,
         "last_error": None,
         "last_seen_ok": None,
+        "post_fail_streak": 0,
     }
 
 
@@ -464,6 +490,9 @@ def emit_ticket(
 
     fn = post_fn or post_task
     status, payload = fn(body)
+    if not isinstance(payload, dict):
+        payload = {"raw": payload}
+    payload["_http_status"] = status
     if status in (200, 201) and payload.get("ok", True):
         log(
             f"task ok http={status} id={payload.get('task_id')} "
@@ -531,11 +560,19 @@ def process_camera_sample(
             new_st["ticketed"] = True
             new_st["last_task_id"] = payload.get("task_id")
             new_st["last_error"] = None
+            new_st["post_fail_streak"] = 0
             action = f"{action}:{result}"
         else:
             new_st["last_error"] = str(payload.get("error") or payload)[:300]
-            # Keep ticketed=false so a later cycle can retry.
-            action = f"{action}:error"
+            new_st["post_fail_streak"] = int(new_st.get("post_fail_streak") or 0) + 1
+            # Permanent client errors (bad key / unknown user) — stop hammering.
+            http_status = payload.get("_http_status")
+            if is_permanent_client_error(int(http_status or 0)):
+                new_st["ticketed"] = True
+                action = f"{action}:fatal"
+            else:
+                # Transient — keep ticketed=false so a later cycle can retry.
+                action = f"{action}:error"
 
     cams[key] = new_st
     return action

@@ -18,14 +18,17 @@ from camera_ticket_notifier import (
     emit_ticket,
     external_id,
     load_state,
+    normalize_api_key,
     parse_base_urls,
     parse_camera_fps,
     post_task,
     process_camera_sample,
+    run_cycle,
     save_state,
     should_failover_status,
 )
 from urllib.error import URLError
+import camera_ticket_notifier as mod
 
 
 class ParseAndIdsTests(unittest.TestCase):
@@ -266,6 +269,124 @@ class ProcessSampleTests(unittest.TestCase):
         self.assertTrue(action.startswith("bootstrap_silent"))
         self.assertEqual(posts, [])
         self.assertTrue(state["cameras"]["cafe:cam_x"]["ticketed"])
+
+
+class ApiKeyTests(unittest.TestCase):
+    def test_strips_client_prefix(self):
+        self.assertEqual(
+            normalize_api_key("CCTVizad:ttMJ8QbMgNSOw3mQpo_IguHQP9ahPZVLLc7oY5xSXqI"),
+            "ttMJ8QbMgNSOw3mQpo_IguHQP9ahPZVLLc7oY5xSXqI",
+        )
+
+    def test_keeps_bare_secret(self):
+        self.assertEqual(normalize_api_key("abc123"), "abc123")
+
+    def test_keeps_sk_tokens(self):
+        self.assertEqual(normalize_api_key("sk_cameras_xxx"), "sk_cameras_xxx")
+
+
+class ProcessFlowTests(unittest.TestCase):
+    def test_bootstrap_then_new_outage_tickets_once(self):
+        """Full site process: first scan silent, later outage tickets once."""
+        state = {"bootstrapped_sites": [], "cameras": {}}
+        posts: list[dict] = []
+
+        def emit(body, **_kw):
+            posts.append(body)
+            return "posted", {"ok": True, "task_id": 99, "_http_status": 201}
+
+        # Cycle 1 — bootstrap already-offline cam_a (no ticket)
+        a1 = process_camera_sample(
+            state,
+            site="center11",
+            camera="cam_a",
+            fps=0.0,
+            fail_threshold=3,
+            emit_fn=emit,
+        )
+        self.assertTrue(a1.startswith("bootstrap_silent"))
+        state["bootstrapped_sites"] = ["center11"]
+        self.assertEqual(posts, [])
+
+        # Online cam_b stays quiet
+        process_camera_sample(
+            state, site="center11", camera="cam_b", fps=5.0, fail_threshold=3, emit_fn=emit
+        )
+
+        # cam_b drops for 3 cycles → one ticket
+        for _ in range(3):
+            process_camera_sample(
+                state,
+                site="center11",
+                camera="cam_b",
+                fps=0.0,
+                fail_threshold=3,
+                emit_fn=emit,
+            )
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0]["external_id"], "camera-center11-cam_b-offline")
+        self.assertEqual(posts[0]["assignee_username"], "faraji")
+        self.assertEqual(posts[0]["collaborator_usernames"], ["bahrami", "sahragard"])
+
+        # Still offline — no spam
+        process_camera_sample(
+            state, site="center11", camera="cam_b", fps=0.0, fail_threshold=3, emit_fn=emit
+        )
+        self.assertEqual(len(posts), 1)
+
+    def test_fatal_401_stops_retry_spam(self):
+        state = {"bootstrapped_sites": ["cafe"], "cameras": {}}
+
+        def emit(body, **_kw):
+            return "error", {"ok": False, "error": "unauthorized", "_http_status": 401}
+
+        for _ in range(3):
+            action = process_camera_sample(
+                state,
+                site="cafe",
+                camera="cam_z",
+                fps=0.0,
+                fail_threshold=3,
+                emit_fn=emit,
+            )
+        self.assertTrue(action.endswith(":fatal"))
+        self.assertTrue(state["cameras"]["cafe:cam_z"]["ticketed"])
+
+        # Next cycle must not call emit again (ticketed)
+        calls = []
+
+        def emit2(body, **_kw):
+            calls.append(1)
+            return "posted", {"ok": True, "task_id": 1}
+
+        process_camera_sample(
+            state, site="cafe", camera="cam_z", fps=0.0, fail_threshold=3, emit_fn=emit2
+        )
+        self.assertEqual(calls, [])
+
+    def test_run_cycle_marks_site_bootstrapped(self):
+        state = {"bootstrapped_sites": [], "cameras": {}}
+
+        def fake_probe(inst):
+            return {
+                "site": inst["id"],
+                "ok": True,
+                "uptime_sec": 500,
+                "cameras": {"cam_1": 0.0, "cam_2": 4.0},
+                "error": None,
+                "in_grace": False,
+            }
+
+        old = mod.probe_instance
+        try:
+            mod.probe_instance = fake_probe  # type: ignore
+            run_cycle(state, instances=[{"id": "villa", "base": "http://x"}])
+        finally:
+            mod.probe_instance = old
+
+        self.assertIn("villa", state["bootstrapped_sites"])
+        self.assertTrue(state["cameras"]["villa:cam_1"]["ticketed"])
+        self.assertEqual(state["cameras"]["villa:cam_2"]["status"], "ok")
 
 
 class FailoverTests(unittest.TestCase):
