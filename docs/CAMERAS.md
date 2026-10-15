@@ -25,7 +25,7 @@
 | نمونه | پورت | تعداد | دوربین‌ها / محل |
 |---|---:|---:|---|
 | `cafe` | 8972 | 10 | DVR کافه ch1–8، `.52` نمای غربی کافه، `.49` ورودی کافه |
-| `center11` | 8973 | 9 | `.4,.5,.6,.9`(رمز جدید)`,41`، پذیرش به پل `.134`، پذیرش به ساحل `.135`، اتاق سرور `.112`، ورودی اتاق مدیریت `.11` |
+| `center11` | 8973 | 10 | `.4,.5,.6,.9`(رمز جدید)`,41`، `.67`، پذیرش به پل `.134`، پذیرش به ساحل `.135`، اتاق سرور `.112`، ورودی اتاق مدیریت `.11` |
 | `restaurant` | 8975 | 10 | `.136,.137,.14,.13,.17,.18,.19,.99`، ورودی رستوران `.101`، درب پشت رستوران `.100` |
 | `sahel` | 8976 | 4 | `.54,.47,.48,.53` |
 | `villa` | 8977 | 4 | `.51,.12,.43,.44` |
@@ -42,7 +42,7 @@
 | نمونه | نام‌های Frigate |
 |---|---|
 | `cafe` | `dvr_cafe_ch1` تا `dvr_cafe_ch8`, `view_cafe_gharb`, `vorodi_cafe` |
-| `center11` | `cam_4`, `cam_5`, `cam_6`, `cam_9`, `cam_11`, `cam_41`, `paziresh_be_pol`, `paziresh_be_sahel`, `cam_112` |
+| `center11` | `cam_4`, `cam_5`, `cam_6`, `cam_9`, `cam_11`, `cam_41`, `cam_67`, `paziresh_be_pol`, `paziresh_be_sahel`, `cam_112` |
 | `restaurant` | `restoran_paeen`, `restoran_bala`, `restoran_sandogh`, `cam_13`, `cam_17`, `cam_18`, `cam_19`, `cam_99`, `vorodi_restoran`, `darb_posht_restoran` |
 | `sahel` | `sahel_shargh`, `sahel_gharb_47`, `sahel_gharb_48`, `view_cafe_shargh` |
 | `villa` | `villa_ha`, `villa_ha_gharb`, `cam_43`, `cam_44` |
@@ -170,6 +170,7 @@ rtsp://192.168.51.222:554/user=admin_password=admin123_channel=<1-5>_stream=0.sd
 | IP | نام | نمونه |
 |---|---|---|
 | `192.168.51.9` | `cam_9` | center11 |
+| `192.168.51.67` | `cam_67` | center11 |
 | `192.168.51.134` | `paziresh_be_pol` | center11 |
 | `192.168.51.135` | `paziresh_be_sahel` | center11 |
 | `192.168.51.136` | `restoran_paeen` | restaurant |
@@ -206,6 +207,7 @@ rtsp://192.168.51.222:554/user=admin_password=admin123_channel=<1-5>_stream=0.sd
 - **temp → center11**: cam_11 (ورودی اتاق مدیریت) منتقل شد.
 - **temp → restaurant**: `.101` به‌عنوان `vorodi_restoran` و `.100` به‌عنوان
   `darb_posht_restoran` منتقل شدند (رمز `admin123`، ضبط فعال).
+- **center11**: `cam_67` (`.67`، رمز `1259110@av`) اضافه شد.
 
 ### غیرفعال در نمونه `temp`
 
@@ -243,10 +245,10 @@ rtsp://192.168.51.222:554/user=admin_password=admin123_channel=<1-5>_stream=0.sd
 
 | وضعیت | تعداد |
 |---|---:|
-| فعال در ۱۱ نمونه دائمی | **78** |
+| فعال در ۱۱ نمونه دائمی | **79** |
 | غیرفعال در نمونه `temp` | **5** |
 | planned (فقط DVR کافه ch10) | **1** |
-| مجموع موجودی کارت پرتال | **84** |
+| مجموع موجودی کارت پرتال | **85** |
 | inactive در پرتال | **6** |
 | broken | **0** |
 

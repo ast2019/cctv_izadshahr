@@ -22,7 +22,7 @@ const SITES = [
     description: "دوربین‌های پذیرش، ورودی مجتمع و اتاق سرور",
     icon: "🏨",
     port: 8973,
-    cameraCount: 9,
+    cameraCount: 10,
     enabled: true,
     healthPath: "/health/center11/",
     apiPath: "/center11/api/",
@@ -184,8 +184,8 @@ const SITES = [
  * broken = قبلاً فعال بوده یا باید فعال باشد ولی الان قطع است
  */
 const CAMERA_INVENTORY = {
-  // active=78 در نمونه‌های دائمی + temp disabled=5 + dvr_cafe_ch10 planned=1
-  total: 84,
+  // active=79 در نمونه‌های دائمی + temp disabled=5 + dvr_cafe_ch10 planned=1
+  total: 85,
   inactive: 6, // 5 در نمونه موقت temp (غیرفعال) + dvr_cafe_ch10
   broken: 0,
 };
