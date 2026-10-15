@@ -59,9 +59,9 @@ go2rtc:
     # cam_11 (.11) ورودی اتاق مدیریت — منتقل شد از temp. password admin123.
     cam_11:
       - rtsp://admin:admin123@192.168.51.11:554/Streaming/Channels/102
-    # cam_67 (.67) دوربین جدید پذیرش — password 1259110@av.
+    # cam_67 (.67) دوربین جدید پذیرش — password admin123.
     cam_67:
-      - rtsp://admin:1259110%40av@192.168.51.67:554/Streaming/Channels/102
+      - rtsp://admin:admin123@192.168.51.67:554/Streaming/Channels/102
     # shargh_vorodi (.131) حذف شد — کار نمی‌کرد (به‌درخواست کاربر).
 
 cameras:
